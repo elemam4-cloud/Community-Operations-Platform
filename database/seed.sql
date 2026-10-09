@@ -1,0 +1,13 @@
+-- Demo seed data only. Replace all IDs and values before production use.
+INSERT INTO communities (id,name,timezone,default_language,created_at) VALUES ('demo-community','مجتمع الواحة','Africa/Cairo','ar','2026-10-09T08:00:00Z');
+INSERT INTO buildings (id,community_id,name,created_at) VALUES ('building-a','demo-community','المبنى A','2026-10-09T08:00:00Z'),('building-b','demo-community','المبنى B','2026-10-09T08:00:00Z');
+INSERT INTO units (id,community_id,building_id,code,status) VALUES ('unit-a204','demo-community','building-a','A-204','active'),('unit-b118','demo-community','building-b','B-118','active'),('unit-c305','demo-community','building-a','C-305','active');
+INSERT INTO users (id,community_id,full_name,phone,status,created_at) VALUES ('user-admin','demo-community','مدير النظام','01000000000','active','2026-10-09T08:00:00Z'),('user-ahmed','demo-community','أحمد محمد','01012345678','active','2026-10-09T08:00:00Z'),('user-sara','demo-community','سارة علي','01077889900','active','2026-10-09T08:00:00Z'),('user-security','demo-community','أمن البوابة','01099999999','active','2026-10-09T08:00:00Z');
+INSERT INTO user_roles (user_id,role) VALUES ('user-admin','admin'),('user-ahmed','resident'),('user-sara','resident'),('user-security','security');
+INSERT INTO unit_memberships (unit_id,user_id,membership_type,is_primary) VALUES ('unit-a204','user-ahmed','owner',1),('unit-c305','user-sara','owner',1);
+INSERT INTO vehicles (id,community_id,primary_user_id,plate_number,access_tag,status) VALUES ('vehicle-abc123','demo-community','user-ahmed','ABC 123','RFID-DEMO-001','active');
+INSERT INTO parking_spaces (id,community_id,code,zone,assigned_unit_id,status) VALUES ('parking-p118','demo-community','P-118','الشمالية','unit-a204','assigned'),('parking-p119','demo-community','P-119','الشمالية',NULL,'available');
+INSERT INTO permits (id,community_id,issued_by,unit_id,subject_name,permit_type,starts_at,expires_at,status,created_at) VALUES ('permit-sara-visitor','demo-community','user-sara','unit-c305','زائر سارة علي','visitor','2026-10-09T08:00:00Z','2026-10-09T18:00:00Z','active','2026-10-09T08:00:00Z');
+INSERT INTO maintenance_tickets (id,community_id,unit_id,requester_id,title,description,priority,status,created_at) VALUES ('ticket-1048','demo-community','unit-a204','user-ahmed','تسريب مياه في الحمام','يرجى فحص مصدر التسريب وإصلاحه','high','in_progress','2026-10-09T06:30:00Z');
+INSERT INTO announcements (id,community_id,author_id,title,body,audience,published_at,created_at) VALUES ('announcement-water','demo-community','user-admin','صيانة شبكة المياه','ستتم صيانة الشبكة غدًا من الساعة 10 إلى 12 صباحًا.','building-a','2026-10-09T07:00:00Z','2026-10-09T07:00:00Z');
+

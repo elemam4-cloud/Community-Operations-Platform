@@ -10,6 +10,7 @@ async function apiRequest(path,options={}){
 }
 window.CommunityAPI={
   config:apiConfig,
+  getDashboard:()=>apiRequest('dashboard'),
   getUnits:()=>apiRequest('units'),
   getVehicles:()=>apiRequest('vehicles'),
   getParking:()=>apiRequest('parking'),

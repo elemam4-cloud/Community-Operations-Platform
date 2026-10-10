@@ -20,6 +20,8 @@ assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO permits')),'permit in
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Test ticket'})}),env);
 assert.equal(res.status,201,'admin can create a maintenance ticket');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO audit_events')),'audit event was written');
+res=await api.fetch(req('/api/demo-community/maintenance-tickets',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
+assert.equal(res.status,200,'resident can read maintenance tickets');
 res=await api.fetch(req('/api/demo-community/permit-revoke',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({permit_id:'permit-demo',reason:'Test revocation'})}),env);
 assert.equal(res.status,200,'admin can revoke a permit');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('UPDATE permits')),'permit revocation was executed');
@@ -28,6 +30,8 @@ assert.equal(res.status,200,'admin can update maintenance status');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO ticket_history')),'ticket history was written');
 res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Water maintenance',body:'Scheduled maintenance tomorrow'})}),env);
 assert.equal(res.status,201,'admin can publish an announcement');
+res=await api.fetch(req('/api/demo-community/announcements',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
+assert.equal(res.status,200,'resident can read announcements');
 res=await api.fetch(req('/api/demo-community/notifications',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
 assert.equal(res.status,200,'resident can read notifications');
 res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);

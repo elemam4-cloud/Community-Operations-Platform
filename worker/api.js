@@ -56,7 +56,7 @@ export default {
     }
     if (request.method === "GET" && action === "parking") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,code,zone,assigned_unit_id,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      const result = await env.DB.prepare(`SELECT id,code,zone,parking_type,assigned_unit_id,access_control,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
       return json(result.results);
     }
     if (request.method === "GET" && action === "maintenance-tickets") {

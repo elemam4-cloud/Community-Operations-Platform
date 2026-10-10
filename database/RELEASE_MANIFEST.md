@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-- Platform release: `4.42`
+- Platform release: `4.43`
 - Schema baseline: `portable-sqlite-d1`
 - Canonical schema: `database/schema.sql`
 - Demo-only seed: `database/seed.sql`

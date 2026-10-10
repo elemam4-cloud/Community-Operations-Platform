@@ -23,6 +23,8 @@ res=await api.fetch(req('/api/demo-community/visits',{method:'POST',headers:{'co
 assert.equal(res.status,201,'security can register an expected visit');
 res=await api.fetch(req('/api/demo-community/visits',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({visit_id:'visit-demo',status:'checked_in'})}),env);
 assert.equal(res.status,200,'security can check a visit in');
+res=await api.fetch(req('/api/demo-community/visits',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
+assert.equal(res.status,200,'resident can read scoped visits');
 res=await api.fetch(req('/api/demo-community/permits',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-ahmed'},body:JSON.stringify({subject_name:'Other unit visitor',permit_type:'visitor',unit_id:'other-unit',starts_at:'2026-10-10T08:00:00Z',expires_at:'2026-10-10T18:00:00Z'})}),env);
 assert.equal(res.status,403,'resident cannot issue a permit for another unit');
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Test ticket'})}),env);

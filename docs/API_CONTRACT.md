@@ -15,6 +15,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 
 - `POST /api/{community_id}/vehicles` — register a vehicle; a resident is always the owner of the new record.
 - `POST /api/{community_id}/parking-assignments` — operations/admin assignment with audit event.
+- `POST /api/{community_id}/parking-claim` — resident claim of an available `first_come` space after unit-membership validation.
 - `POST /api/{community_id}/permits` — issue a time-bounded permit.
 - `POST /api/{community_id}/permit-revoke` — revoke an active permit and record the reason.
 - `POST /api/{community_id}/gate-check` — allow only when the permit is active, started, and not expired.

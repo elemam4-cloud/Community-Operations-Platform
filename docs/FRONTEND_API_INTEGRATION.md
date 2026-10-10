@@ -27,5 +27,7 @@ The dashboard also exposes a controlled manual-gate panel for authorized operato
 
 Vehicle registration is dual-mode as well: the vehicle form sends `POST /api/{community_id}/vehicles` with the plate and optional access tag in server-backed mode, and remains explicitly local-demo data otherwise.
 
+The parking panel sends `POST /api/{community_id}/parking-occupancy` with the selected state and source (`manual`, `sensor`, or `camera`). The resulting indicator is shown to the operator and the dashboard is refreshed.
+
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

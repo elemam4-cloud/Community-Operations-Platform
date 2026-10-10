@@ -34,3 +34,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - Resident list operations are scoped to resident-owned records.
 - External RFID/ANPR adapters should translate device events into the gate-event contract rather than bypassing authorization.
 
+## Community policy switches
+
+The controls above are configurable per community through `community_policies`. Supported keys are `permit_time_window`, `resident_ownership_scope`, `gate_value_validation`, `resident_vehicle_scope`, and `parking_unit_validation`. A missing key defaults to enabled; administrators may disable selected controls when the community's operating policy calls for a less restrictive mode.
+

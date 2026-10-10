@@ -16,6 +16,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `POST /api/{community_id}/vehicles` — register a vehicle; a resident is always the owner of the new record.
 - `POST /api/{community_id}/parking-assignments` — operations/admin assignment with audit event.
 - `POST /api/{community_id}/parking-claim` — resident claim of an available `first_come` space after unit-membership validation.
+- `POST /api/{community_id}/parking-occupancy` — operations/security/device adapter updates occupied, vacant, or unknown state and receives a red/green/amber indicator.
 - `POST /api/{community_id}/permits` — issue a time-bounded permit.
 - `POST /api/{community_id}/permit-revoke` — revoke an active permit and record the reason.
 - `POST /api/{community_id}/gate-check` — allow only when the permit is active, started, and not expired.
@@ -31,6 +32,9 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `PATCH /api/{community_id}/policies` — operations/admin enable or disable an approved policy.
 - `GET /api/{community_id}/settings` — operations/admin view multi-mode settings.
 - `PATCH /api/{community_id}/settings` — operations/admin select an approved access verification mode.
+- `GET /api/{community_id}/commercial-units` — operations/security view tenants and commercial spaces.
+- `POST /api/{community_id}/commercial-units` — operations/admin create a tenant space.
+- `GET /api/{community_id}/loading-slots` — operations/security view loading areas.
 
 ## Safety rules
 
@@ -40,6 +44,8 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - External RFID/ANPR adapters should translate device events into the gate-event contract rather than bypassing authorization.
 
 Parking records support `parking_type=shared|private`, `allocation_mode=fixed|reservation|first_come`, and `access_control=community|unit_only|none`. A community may assign one or many fixed spaces to a unit, reserve shared spaces, or make them first-come-first-served. Private spaces can therefore bypass shared-parking rules while remaining visible in the inventory and audit model.
+
+Occupancy is separate from assignment. A sensor, camera/ANPR adapter, or gate event can update `occupancy_state`; the display layer can map `vacant` to green, `occupied` to red, and `unknown` to amber. `unknown` is intentionally supported when a sensor is offline or stale.
 
 ## Community policy switches
 

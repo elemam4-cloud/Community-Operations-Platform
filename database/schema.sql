@@ -24,6 +24,7 @@ CREATE TABLE maintenance_tickets (id TEXT PRIMARY KEY, community_id TEXT NOT NUL
 CREATE TABLE ticket_history (id TEXT PRIMARY KEY, ticket_id TEXT NOT NULL REFERENCES maintenance_tickets(id), changed_by TEXT NOT NULL REFERENCES users(id), from_status TEXT, to_status TEXT NOT NULL, note TEXT, changed_at TEXT NOT NULL);
 CREATE TABLE announcements (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), author_id TEXT NOT NULL REFERENCES users(id), title TEXT NOT NULL, body TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'announcement', audience TEXT NOT NULL DEFAULT 'all', delivery_channels TEXT NOT NULL DEFAULT 'in_app', scheduled_at TEXT, published_at TEXT, created_at TEXT NOT NULL);
 CREATE TABLE notifications (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), user_id TEXT NOT NULL REFERENCES users(id), announcement_id TEXT REFERENCES announcements(id), channel TEXT NOT NULL DEFAULT 'in_app', delivery_status TEXT NOT NULL DEFAULT 'pending', read_at TEXT, created_at TEXT NOT NULL);
+CREATE TABLE unit_mail_items (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), unit_id TEXT NOT NULL REFERENCES units(id), item_type TEXT NOT NULL DEFAULT 'message', subject TEXT NOT NULL, body TEXT, reference_code TEXT, status TEXT NOT NULL DEFAULT 'unread', received_at TEXT NOT NULL, read_at TEXT, collected_at TEXT, created_by TEXT REFERENCES users(id));
 CREATE TABLE audit_events (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), actor_user_id TEXT REFERENCES users(id), action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, metadata_json TEXT, created_at TEXT NOT NULL);
 
 CREATE INDEX idx_users_community ON users(community_id);
@@ -31,6 +32,7 @@ CREATE INDEX idx_permits_expiry ON permits(community_id, expires_at, status);
 CREATE INDEX idx_gate_events_time ON gate_events(community_id, captured_at);
 CREATE INDEX idx_tickets_status ON maintenance_tickets(community_id, status, priority);
 CREATE INDEX idx_notifications_user ON notifications(user_id, read_at);
+CREATE INDEX idx_unit_mailbox ON unit_mail_items(community_id, unit_id, status, received_at);
 CREATE INDEX idx_leases_subject ON leases(community_id, subject_type, subject_id, status);
 CREATE INDEX idx_leases_lessee ON leases(community_id, lessee_user_id, status);
 CREATE INDEX idx_lease_payments_due ON lease_payments(community_id, due_date, status);

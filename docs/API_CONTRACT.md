@@ -35,6 +35,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `GET /api/{community_id}/commercial-units` — operations/security view tenants and commercial spaces.
 - `POST /api/{community_id}/commercial-units` — operations/admin create a tenant space.
 - `GET /api/{community_id}/loading-slots` — operations/security view loading areas.
+- `POST /api/{community_id}/loading-bookings` — operations/security create a time-bounded supplier booking.
 
 ## Safety rules
 

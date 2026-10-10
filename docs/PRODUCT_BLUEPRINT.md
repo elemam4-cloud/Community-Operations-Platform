@@ -19,6 +19,13 @@ One extensible operating platform for residential communities. Every module is o
 6. Facilities, activities, bookings and internal service directory.
 7. Reports, audit log, settings and bilingual content.
 
+## Optional commercial module
+
+- Commercial units, tenants, categories and lease status.
+- Loading zones and reservable delivery slots.
+- Supplier, contractor and vehicle permits can reuse the core permit and gate model.
+- The module remains disabled for communities that do not need it.
+
 ## Non-negotiable behavior
 - Every access decision is auditable.
 - Temporary permits expire automatically.

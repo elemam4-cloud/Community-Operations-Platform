@@ -49,6 +49,7 @@ assert.equal(emergencyDashboard.last_successful_sync_at, '2026-10-10T08:00:00Z')
 
 response = await api.fetch(request('/api/demo-community/gate-events', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ gate_name: 'North Gate', direction: 'entry', decision: 'allowed', manual_override: true, reason: 'Emergency response' }) }), env);
 assert.equal(response.status, 201);
+assert.equal(sqlite.prepare("SELECT count(*) AS count FROM audit_events WHERE action='gate.manual_override' AND metadata_json LIKE '%Emergency response%'").get().count, 1);
 response = await api.fetch(request('/api/demo-community/policies', { method: 'PATCH', headers: headers('user-admin'), body: JSON.stringify({ policy_key: 'manual_gate_override', enabled: false }) }), env);
 assert.equal(response.status, 200);
 response = await api.fetch(request('/api/demo-community/gate-events', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ gate_name: 'North Gate', direction: 'entry', decision: 'allowed', manual_override: true, reason: 'Should be rejected' }) }), env);

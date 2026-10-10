@@ -291,6 +291,22 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "setting.update", "community_setting", body.setting_key, JSON.stringify({value:body.setting_value}), new Date().toISOString()).run();
       return json({ setting_key: body.setting_key, setting_value: body.setting_value });
     }
+    if (request.method === "GET" && action === "modules") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT module_key,status,configuration_json,updated_at FROM community_modules WHERE community_id=? ORDER BY module_key`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "PATCH" && action === "modules") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      const allowed = ["core_identity", "access_security", "vehicles_parking", "permits_visitors", "maintenance", "information_center", "unit_mailbox", "leases", "lease_payments", "facilities_activities", "commercial_operations", "reports_integrations"];
+      if (!body?.module_key || !allowed.includes(body.module_key) || !["enabled", "disabled", "pilot"].includes(body.status)) return fail("Invalid module configuration");
+      const now = new Date().toISOString();
+      const config = body.configuration == null ? null : JSON.stringify(body.configuration);
+      await env.DB.prepare(`INSERT INTO community_modules (community_id,module_key,status,configuration_json,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(community_id,module_key) DO UPDATE SET status=excluded.status,configuration_json=excluded.configuration_json,updated_at=excluded.updated_at`).bind(communityId, body.module_key, body.status, config, now).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "module.update", "community_module", body.module_key, JSON.stringify({status:body.status}), now).run();
+      return json({ module_key: body.module_key, status: body.status, updated_at: now });
+    }
     if (request.method === "GET" && action === "leases") {
       if (!["admin", "operations", "security", "resident"].includes(userRole)) return fail("Forbidden", 403);
       const residentScope = userRole === "resident" ? " AND lessee_user_id=?" : "";

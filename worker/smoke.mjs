@@ -48,6 +48,8 @@ res=await api.fetch(req('/api/demo-community/notifications',{method:'PATCH',head
 assert.equal(res.status,200,'resident can mark notification read');
 res=await api.fetch(req('/api/demo-community/policies',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({policy_key:'gate_value_validation',enabled:false})}),env);
 assert.equal(res.status,200,'admin can change a community policy');
+res=await api.fetch(req('/api/demo-community/settings',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({setting_key:'access_verification_mode',setting_value:'hybrid'})}),env);
+assert.equal(res.status,200,'admin can choose access verification mode');
 res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);
 assert.equal(res.status,200,'security can read parking');
 res=await api.fetch(req('/api/demo-community/parking-assignments',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({parking_space_id:'space-demo',unit_id:'unit-demo'})}),env);

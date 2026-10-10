@@ -277,6 +277,32 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "lease.create", "lease", id, JSON.stringify({subject_type:body.subject_type,subject_id:body.subject_id}), new Date().toISOString()).run();
       return json({ id, status: body.status || "active" }, 201);
     }
+    if (request.method === "GET" && action === "lease-payments") {
+      if (!["admin", "operations", "security", "resident"].includes(userRole)) return fail("Forbidden", 403);
+      const residentScope = userRole === "resident" ? " AND l.lessee_user_id=?" : "";
+      const params = userRole === "resident" ? [communityId, user.id] : [communityId];
+      const result = await env.DB.prepare(`SELECT p.id,p.lease_id,p.due_date,p.amount,p.currency,p.status,p.paid_at,p.payment_method,p.payment_reference,p.reminder_sent_at FROM lease_payments p JOIN leases l ON l.id=p.lease_id WHERE p.community_id=?${residentScope} ORDER BY p.due_date`).bind(...params).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "lease-payments") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.lease_id || !body?.due_date || !Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0) return fail("Payment schedule fields are incomplete");
+      const lease = await env.DB.prepare(`SELECT id FROM leases WHERE id=? AND community_id=?`).bind(body.lease_id, communityId).first();
+      if (!lease) return fail("Lease not found", 404);
+      if (body.status && !["due", "paid", "late", "waived"].includes(body.status)) return fail("Invalid payment status");
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO lease_payments (id,community_id,lease_id,due_date,amount,currency,status,paid_at,payment_method,payment_reference,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.lease_id, body.due_date, Number(body.amount), body.currency || "EGP", body.status || "due", body.paid_at || null, body.payment_method || null, body.payment_reference || null, new Date().toISOString()).run();
+      return json({ id, status: body.status || "due" }, 201);
+    }
+    if (request.method === "PATCH" && action === "lease-payments") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.payment_id || !["paid", "due", "late", "waived"].includes(body.status)) return fail("Payment update is invalid");
+      const paidAt = body.status === "paid" ? (body.paid_at || new Date().toISOString()) : null;
+      await env.DB.prepare(`UPDATE lease_payments SET status=?,paid_at=?,payment_method=?,payment_reference=? WHERE id=? AND community_id=?`).bind(body.status, paidAt, body.payment_method || null, body.payment_reference || null, body.payment_id, communityId).run();
+      return json({ id: body.payment_id, status: body.status, paid_at: paidAt });
+    }
     if (request.method === "GET" && action === "commercial-units") {
       if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
       const result = await env.DB.prepare(`SELECT id,code,tenant_name,category,status,lease_start,lease_end FROM commercial_units WHERE community_id=? ORDER BY code`).bind(communityId).all();

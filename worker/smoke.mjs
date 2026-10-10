@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import api from './api.js';
 
 class FakeDB {
-  constructor(){this.calls=[];}
+  constructor(){this.calls=[];this.disabledModules=new Set();}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('FROM users')?{id:args[0]}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available',parking_type:'shared',assigned_unit_id:null}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('community_modules')?{status:self.disabledModules.has(args[1])?'disabled':'enabled'}:sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('FROM users')?{id:args[0]}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available',parking_type:'shared',assigned_unit_id:null}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{if(sql.includes('community_modules') && args[1] && args[2]==='disabled') self.disabledModules.add(args[1]); self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};
@@ -56,6 +56,10 @@ res=await api.fetch(req('/api/demo-community/unit-mailbox',{method:'POST',header
 assert.equal(res.status,201,'operations can place an item in a unit mailbox');
 res=await api.fetch(req('/api/demo-community/unit-mailbox?unit_id=unit-a204',{headers:{'oai-authenticated-user-id':'user-admin'}}),env);
 assert.equal(res.status,200,'admin can read a unit mailbox');
+res=await api.fetch(req('/api/demo-community/modules',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({module_key:'unit_mailbox',status:'disabled'})}),env);
+assert.equal(res.status,200,'admin can disable a module');
+res=await api.fetch(req('/api/demo-community/unit-mailbox?unit_id=unit-a204',{headers:{'oai-authenticated-user-id':'user-admin'}}),env);
+assert.equal(res.status,404,'disabled module is not exposed');
 res=await api.fetch(req('/api/demo-community/commercial-units',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({code:'SHOP-A01',tenant_name:'Demo Retail',category:'retail'})}),env);
 assert.equal(res.status,201,'admin can create a commercial unit');
 res=await api.fetch(req('/api/demo-community/leases',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_type:'residential_unit',subject_id:'unit-a204',lessor_name:'Community Owner',lessee_name:'Ahmed Resident',lessee_user_id:'user-ahmed',starts_at:'2026-10-01T00:00:00Z',ends_at:'2027-10-01T00:00:00Z',rent_amount:15000})}),env);

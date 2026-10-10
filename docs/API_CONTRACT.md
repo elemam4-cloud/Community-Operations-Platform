@@ -68,6 +68,8 @@ The controls above are configurable per community through `community_policies`. 
 
 Feature modes that have more than two states use `community_settings`. For example, `access_verification_mode` may be `qr_only`, `tag_only`, `qr_or_tag`, `anpr_only`, or `hybrid`. The demo defaults to `qr_or_tag`; ANPR/camera integration can be added without forcing every community to install cameras.
 
+The reference scheduled reminder implementation is `worker/reminders.js`. It queues one in-app reminder per eligible lease payment and records `reminder_sent_at`; a cron trigger or external scheduler can invoke it and add email, SMS, or WhatsApp adapters.
+
 Lease payments are lightweight operational records: amount, due date, status, and optional payment reference. Reminder delivery can use email, SMS, or WhatsApp adapters; the platform stores reminder timing without forcing one provider.
 
 When a `due` installment passes its due date, the read contract exposes it as `late` without destroying the original record. A scheduled notification worker can select upcoming or late installments, create in-app notifications, and hand delivery to the configured email/SMS/WhatsApp provider.

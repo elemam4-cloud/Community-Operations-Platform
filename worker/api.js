@@ -139,6 +139,10 @@ export default {
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       await env.DB.prepare(`INSERT INTO announcements (id,community_id,author_id,title,body,audience,published_at,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.title, body.body, body.audience || "all", now, now).run();
+      const recipients = await env.DB.prepare(`SELECT id FROM users WHERE community_id=? AND status='active'`).bind(communityId).all();
+      for (const recipient of recipients.results || []) {
+        await env.DB.prepare(`INSERT INTO notifications (id,community_id,user_id,announcement_id,channel,delivery_status,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, recipient.id, id, "in_app", "pending", now).run();
+      }
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "announcement.publish", "announcement", id, now).run();
       return json({ id, published_at: now }, 201);
     }

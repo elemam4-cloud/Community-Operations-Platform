@@ -5,7 +5,7 @@ class FakeDB {
   constructor(){this.calls=[];}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:null,all:async()=>({results:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:null,all:async()=>({results:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};
@@ -29,6 +29,8 @@ assert.ok(env.DB.calls.some(x=>x.sql.includes('UPDATE permits')),'permit revocat
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({ticket_id:'ticket-demo',status:'in_progress',note:'Technician assigned'})}),env);
 assert.equal(res.status,200,'admin can update maintenance status');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO ticket_history')),'ticket history was written');
+res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({ticket_id:'ticket-demo',status:'invalid'})}),env);
+assert.equal(res.status,400,'invalid maintenance status is rejected');
 res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Water maintenance',body:'Scheduled maintenance tomorrow'})}),env);
 assert.equal(res.status,201,'admin can publish an announcement');
 res=await api.fetch(req('/api/demo-community/announcements',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);

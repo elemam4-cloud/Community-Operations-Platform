@@ -6,6 +6,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE communities (id TEXT PRIMARY KEY, name TEXT NOT NULL, community_type TEXT NOT NULL DEFAULT 'residential', timezone TEXT NOT NULL DEFAULT 'Africa/Cairo', default_language TEXT NOT NULL DEFAULT 'ar', created_at TEXT NOT NULL);
 CREATE TABLE community_policies (community_id TEXT NOT NULL REFERENCES communities(id), policy_key TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(community_id, policy_key));
 CREATE TABLE community_settings (community_id TEXT NOT NULL REFERENCES communities(id), setting_key TEXT NOT NULL, setting_value TEXT NOT NULL, PRIMARY KEY(community_id, setting_key));
+CREATE TABLE commercial_units (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), code TEXT NOT NULL, tenant_name TEXT NOT NULL, category TEXT, status TEXT NOT NULL DEFAULT 'active', lease_start TEXT, lease_end TEXT, UNIQUE(community_id, code));
+CREATE TABLE loading_slots (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), code TEXT NOT NULL, zone TEXT, booking_mode TEXT NOT NULL DEFAULT 'reservation', status TEXT NOT NULL DEFAULT 'active', UNIQUE(community_id, code));
 CREATE TABLE users (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), full_name TEXT NOT NULL, phone TEXT, email TEXT, status TEXT NOT NULL DEFAULT 'active', created_at TEXT NOT NULL);
 CREATE TABLE user_roles (user_id TEXT NOT NULL REFERENCES users(id), role TEXT NOT NULL, PRIMARY KEY(user_id, role));
 CREATE TABLE buildings (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), name TEXT NOT NULL, created_at TEXT NOT NULL);

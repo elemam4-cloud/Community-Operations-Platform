@@ -101,6 +101,8 @@ export default {
       if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.gate_name || !body?.direction || !body?.decision) return fail("Gate event fields are incomplete");
+      if (!["entry", "exit"].includes(body.direction)) return fail("Invalid gate direction");
+      if (!["allowed", "denied"].includes(body.decision)) return fail("Invalid gate decision");
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO gate_events (id,community_id,permit_id,vehicle_id,gate_name,direction,decision,captured_at,source) VALUES (?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.vehicle_id || null, body.gate_name, body.direction, body.decision, new Date().toISOString(), body.source || "manual").run();
       return json({ id }, 201);

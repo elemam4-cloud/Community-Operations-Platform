@@ -82,6 +82,8 @@ export default {
       const space = await env.DB.prepare(`SELECT id,status FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
       if (!space) return fail("Parking space not found", 404);
       if (space.status === "assigned") return fail("Parking space is already assigned", 409);
+      const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.unit_id, communityId).first();
+      if (!unit) return fail("Unit not found", 404);
       await env.DB.prepare(`UPDATE parking_spaces SET assigned_unit_id=?,status='assigned' WHERE id=? AND community_id=?`).bind(body.unit_id, body.parking_space_id, communityId).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.assign", "parking_space", body.parking_space_id, new Date().toISOString()).run();
       return json({ id: body.parking_space_id, status: "assigned" }, 201);

@@ -25,5 +25,7 @@ The dashboard displays the server-provided `operational_state` and `last_success
 
 The dashboard also exposes a controlled manual-gate panel for authorized operators. It sends `POST /api/{community_id}/gate-events` with `manual_override=true` and a required reason when server-backed mode is active; the server remains the authority for role and policy checks.
 
+Vehicle registration is dual-mode as well: the vehicle form sends `POST /api/{community_id}/vehicles` with the plate and optional access tag in server-backed mode, and remains explicitly local-demo data otherwise.
+
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

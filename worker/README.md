@@ -19,6 +19,7 @@ Supported first slice:
 - `GET /api/{community_id}/announcements`
 - `POST /api/{community_id}/announcements`
 - `POST /api/{community_id}/permit-revoke`
+- `GET/POST/PATCH /api/{community_id}/visits`
 - `GET/PATCH /api/{community_id}/notifications`
 - `GET/PATCH /api/{community_id}/notification-preferences`
 - `GET/PATCH /api/{community_id}/modules`

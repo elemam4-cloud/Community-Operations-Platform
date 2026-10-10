@@ -56,7 +56,7 @@ export default {
     }
     if (request.method === "GET" && action === "parking") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,code,zone,parking_type,allocation_mode,assigned_unit_id,access_control,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      const result = await env.DB.prepare(`SELECT id,code,zone,parking_type,allocation_mode,assigned_unit_id,access_control,status,occupancy_state,occupancy_source,sensor_ref,last_observed_at FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
       return json(result.results);
     }
     if (request.method === "GET" && action === "maintenance-tickets") {
@@ -110,6 +110,14 @@ export default {
       await env.DB.prepare(`UPDATE parking_spaces SET assigned_unit_id=?,status='assigned' WHERE id=? AND community_id=? AND status='available' AND allocation_mode='first_come'`).bind(body.unit_id, body.parking_space_id, communityId).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.claim", "parking_space", body.parking_space_id, new Date().toISOString()).run();
       return json({ id: body.parking_space_id, status: "assigned" }, 201);
+    }
+    if (request.method === "POST" && action === "parking-occupancy") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.parking_space_id || !["occupied", "vacant", "unknown"].includes(body.occupancy_state)) return fail("Invalid occupancy update");
+      const now = new Date().toISOString();
+      await env.DB.prepare(`UPDATE parking_spaces SET occupancy_state=?,occupancy_source=?,sensor_ref=?,last_observed_at=? WHERE id=? AND community_id=?`).bind(body.occupancy_state, body.source || "manual", body.sensor_ref || null, now, body.parking_space_id, communityId).run();
+      return json({ id: body.parking_space_id, occupancy_state: body.occupancy_state, indicator: body.occupancy_state === "occupied" ? "red" : body.occupancy_state === "vacant" ? "green" : "amber" });
     }
     if (request.method === "POST" && action === "gate-check") {
       if (!can(userRole, "permit") && userRole !== "security") return fail("Forbidden", 403);

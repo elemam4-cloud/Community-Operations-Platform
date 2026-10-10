@@ -109,6 +109,9 @@ export default {
       if (!can(userRole, "permit")) return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.subject_name || !body?.permit_type || !body?.starts_at || !body?.expires_at) return fail("Permit fields are incomplete");
+      const starts = new Date(body.starts_at).getTime();
+      const expires = new Date(body.expires_at).getTime();
+      if (!Number.isFinite(starts) || !Number.isFinite(expires) || expires <= starts) return fail("Permit time range is invalid");
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO permits (id,community_id,issued_by,unit_id,vehicle_id,subject_name,permit_type,starts_at,expires_at,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.unit_id || null, body.vehicle_id || null, body.subject_name, body.permit_type, body.starts_at, body.expires_at, "active", new Date().toISOString()).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "permit.issue", "permit", id, new Date().toISOString()).run();

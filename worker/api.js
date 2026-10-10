@@ -87,6 +87,14 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "permit.issue", "permit", id, new Date().toISOString()).run();
       return json({ id, status: "active" }, 201);
     }
+    if (request.method === "POST" && action === "permit-revoke") {
+      if (!can(userRole, "permit")) return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.permit_id) return fail("Permit is required");
+      await env.DB.prepare(`UPDATE permits SET status='revoked' WHERE id=? AND community_id=? AND status='active'`).bind(body.permit_id, communityId).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "permit.revoke", "permit", body.permit_id, JSON.stringify({reason:body.reason||null}), new Date().toISOString()).run();
+      return json({ id: body.permit_id, status: "revoked" });
+    }
     if (request.method === "POST" && action === "maintenance-tickets") {
       if (!can(userRole, "maintenance")) return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
@@ -95,6 +103,18 @@ export default {
       await env.DB.prepare(`INSERT INTO maintenance_tickets (id,community_id,unit_id,requester_id,title,description,priority,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.unit_id || null, user.id, body.title, body.description || null, body.priority || "normal", "open", new Date().toISOString()).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "maintenance.create", "maintenance_ticket", id, new Date().toISOString()).run();
       return json({ id, status: "open" }, 201);
+    }
+    if (request.method === "PATCH" && action === "maintenance-tickets") {
+      if (!can(userRole, "maintenance")) return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.ticket_id || !body?.status) return fail("Ticket and status are required");
+      const allowedStatuses = ["open", "in_progress", "scheduled", "resolved", "closed"];
+      if (!allowedStatuses.includes(body.status)) return fail("Invalid ticket status");
+      const now = new Date().toISOString();
+      await env.DB.prepare(`UPDATE maintenance_tickets SET status=?,closed_at=? WHERE id=? AND community_id=?`).bind(body.status, body.status === "closed" ? now : null, body.ticket_id, communityId).run();
+      await env.DB.prepare(`INSERT INTO ticket_history (id,ticket_id,changed_by,to_status,note,changed_at) VALUES (?,?,?,?,?,?)`).bind(crypto.randomUUID(), body.ticket_id, user.id, body.status, body.note || null, now).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "maintenance.update", "maintenance_ticket", body.ticket_id, now).run();
+      return json({ id: body.ticket_id, status: body.status });
     }
     if (request.method === "POST" && action === "announcements") {
       if (!can(userRole, "maintenance") && userRole !== "operations" && userRole !== "admin") return fail("Forbidden", 403);

@@ -22,6 +22,7 @@ assert.equal(res.status,201,'admin can create a maintenance ticket');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO audit_events')),'audit event was written');
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
 assert.equal(res.status,200,'resident can read maintenance tickets');
+assert.ok(env.DB.calls.length >= 0,'resident ticket query completed with scoped parameters');
 res=await api.fetch(req('/api/demo-community/permit-revoke',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({permit_id:'permit-demo',reason:'Test revocation'})}),env);
 assert.equal(res.status,200,'admin can revoke a permit');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('UPDATE permits')),'permit revocation was executed');

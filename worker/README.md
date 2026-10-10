@@ -16,3 +16,7 @@ Supported first slice:
 
 The worker deliberately returns a clear `503` when the Site has no database binding. This prevents accidental fallback to an unprotected or in-memory production store.
 
+## External deployment
+
+Copy `wrangler.example.toml` to a private deployment workspace, replace the D1 database ID, apply `../database/schema.sql`, and deploy the Worker with the provider's authenticated CLI. Keep the real `wrangler.toml`, database exports, and secrets outside the public repository.
+

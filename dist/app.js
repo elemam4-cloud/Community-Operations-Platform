@@ -15,10 +15,16 @@ window.CommunityAPI={
   getParking:()=>apiRequest('parking'),
   getTickets:()=>apiRequest('maintenance-tickets'),
   getAnnouncements:()=>apiRequest('announcements'),
+  getInformationCenter:()=>apiRequest('announcements'),
   getNotifications:()=>apiRequest('notifications'),
+  getLeases:()=>apiRequest('leases'),
+  getLeasePayments:()=>apiRequest('lease-payments'),
   createTicket:body=>apiRequest('maintenance-tickets',{method:'POST',body:JSON.stringify(body)}),
+  createLeasePayment:body=>apiRequest('lease-payments',{method:'POST',body:JSON.stringify(body)}),
+  updateLeasePayment:body=>apiRequest('lease-payments',{method:'PATCH',body:JSON.stringify(body)}),
   createPermit:body=>apiRequest('permits',{method:'POST',body:JSON.stringify(body)}),
-  publishAnnouncement:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)})
+  publishAnnouncement:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)}),
+  publishInformation:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)})
 };
 let currentType='general';
 const $=s=>document.querySelector(s);

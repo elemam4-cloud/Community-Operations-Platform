@@ -17,6 +17,7 @@ window.CommunityAPI={
   getAnnouncements:()=>apiRequest('announcements'),
   getInformationCenter:()=>apiRequest('announcements'),
   getNotifications:()=>apiRequest('notifications'),
+  getModules:()=>apiRequest('modules'),
   getUnitMailbox:unitId=>apiRequest(`unit-mailbox?unit_id=${encodeURIComponent(unitId)}`),
   updateUnitMailbox:body=>apiRequest('unit-mailbox',{method:'PATCH',body:JSON.stringify(body)}),
   getLeases:()=>apiRequest('leases'),

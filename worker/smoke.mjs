@@ -31,6 +31,8 @@ assert.equal(res.status,200,'admin can update maintenance status');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO ticket_history')),'ticket history was written');
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({ticket_id:'ticket-demo',status:'invalid'})}),env);
 assert.equal(res.status,400,'invalid maintenance status is rejected');
+res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-ahmed'},body:JSON.stringify({ticket_id:'ticket-demo',status:'resolved'})}),env);
+assert.equal(res.status,403,'resident cannot update another user ticket');
 res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Water maintenance',body:'Scheduled maintenance tomorrow'})}),env);
 assert.equal(res.status,201,'admin can publish an announcement');
 res=await api.fetch(req('/api/demo-community/announcements',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);

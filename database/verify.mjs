@@ -7,7 +7,7 @@ const requiredTables = [
   "communities", "community_policies", "community_settings", "community_modules", "commercial_units", "leases", "lease_payments", "loading_slots", "loading_bookings", "users", "user_roles", "units", "unit_memberships",
   "vehicles", "parking_spaces", "permits", "gate_events",
   "maintenance_tickets", "ticket_history", "announcements",
-  "notifications", "unit_mail_items", "audit_events"
+  "notifications", "notification_preferences", "unit_mail_items", "audit_events"
 ];
 for (const table of requiredTables) {
   assert.match(schema, new RegExp(`CREATE TABLE ${table}\\s`, "i"), `missing table: ${table}`);

@@ -10,6 +10,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `GET /api/{community_id}/maintenance-tickets` — residents receive their own tickets.
 - `GET /api/{community_id}/announcements` — the information center feed; scheduled items appear only when their time arrives.
 - `GET /api/{community_id}/notifications` — current user only.
+- `GET /api/{community_id}/modules` — operations/admin view module activation states.
 - `GET /api/{community_id}/unit-mailbox?unit_id=...` — digital mailbox for an authorized unit.
 
 ## Vehicles, access, and permits
@@ -35,6 +36,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `PATCH /api/{community_id}/policies` — operations/admin enable or disable an approved policy.
 - `GET /api/{community_id}/settings` — operations/admin view multi-mode settings.
 - `PATCH /api/{community_id}/settings` — operations/admin select an approved access verification mode.
+- `PATCH /api/{community_id}/modules` — operations/admin enable, disable, or pilot a module without deleting its data.
 - `GET /api/{community_id}/commercial-units` — operations/security view tenants and commercial spaces.
 - `POST /api/{community_id}/commercial-units` — operations/admin create a tenant space.
 - `GET /api/{community_id}/leases` — operations/security view all leases; residents see only leases linked to their user.

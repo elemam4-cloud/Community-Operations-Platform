@@ -31,4 +31,8 @@ Community setup → unit/resident record → vehicle/parking record → visitor 
 
 ## Future integrations
 RFID/UHF, ANPR cameras, barriers, SMS, WhatsApp Business, payment providers, accounting systems and mobile push notifications. Integrations must be adapter-based so the platform is not tied to one vendor.
+# Deployment scope
+
+The core is property-type neutral. A community can be residential, commercial, mixed-use, campus, or another managed site. Residents, tenants, visitors, vehicles, parking, permits, maintenance, announcements, notifications, and audit trails are shared primitives; property-specific modules are enabled through configuration rather than hard-coded into every workflow.
+
 

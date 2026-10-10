@@ -1,2 +1,2 @@
-{"type":"module","private":true}
+{"type":"module","private":true,"scripts":{"test":"node smoke.mjs && node reminders.smoke.mjs && node sqlite-integration.smoke.mjs && node ../database/verify.mjs && node ../database/sqlite-restore.smoke.mjs"}}
 

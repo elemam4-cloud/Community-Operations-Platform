@@ -50,7 +50,7 @@ export default {
       units: "core_identity", vehicles: "vehicles_parking", parking: "vehicles_parking", "parking-assignments": "vehicles_parking", "parking-claim": "vehicles_parking", "parking-occupancy": "vehicles_parking",
       permits: "permits_visitors", "permit-revoke": "permits_visitors", "gate-check": "access_security", "gate-events": "access_security",
       "maintenance-tickets": "maintenance", announcements: "information_center", notifications: "information_center", "unit-mailbox": "unit_mailbox",
-      leases: "leases", "lease-payments": "lease_payments", "commercial-units": "commercial_operations", "loading-slots": "commercial_operations", "loading-bookings": "commercial_operations"
+      leases: "leases", "lease-payments": "lease_payments", "notification-preferences": "information_center", "commercial-units": "commercial_operations", "loading-slots": "commercial_operations", "loading-bookings": "commercial_operations"
     };
     const moduleKey = moduleByAction[action];
     if (moduleKey && await moduleStatus(env.DB, communityId, moduleKey) === "disabled") return fail("This module is disabled for the community", 404);
@@ -224,7 +224,11 @@ export default {
       await env.DB.prepare(`INSERT INTO announcements (id,community_id,author_id,title,body,content_type,audience,delivery_channels,scheduled_at,published_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.title, body.body, body.content_type || "announcement", audience, selectedChannels.join(","), body.scheduled_at || null, body.scheduled_at ? null : now, now).run();
       const recipients = await env.DB.prepare(`SELECT id FROM users WHERE community_id=? AND status='active'${audienceWhere}`).bind(communityId).all();
       for (const recipient of recipients.results || []) {
-        for (const channel of selectedChannels) await env.DB.prepare(`INSERT INTO notifications (id,community_id,user_id,announcement_id,channel,delivery_status,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, recipient.id, id, channel, "pending", now).run();
+        for (const channel of selectedChannels) {
+          const preference = await env.DB.prepare(`SELECT enabled FROM notification_preferences WHERE user_id=? AND channel=?`).bind(recipient.id, channel).first();
+          if (preference && !preference.enabled) continue;
+          await env.DB.prepare(`INSERT INTO notifications (id,community_id,user_id,announcement_id,channel,delivery_status,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, recipient.id, id, channel, "pending", now).run();
+        }
       }
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "announcement.publish", "announcement", id, now).run();
       return json({ id, published_at: now }, 201);
@@ -275,6 +279,17 @@ export default {
       const now = new Date().toISOString();
       await env.DB.prepare(`UPDATE notifications SET read_at=? WHERE id=? AND community_id=? AND user_id=?`).bind(now, body.notification_id, communityId, user.id).run();
       return json({ id: body.notification_id, read_at: now });
+    }
+    if (request.method === "GET" && action === "notification-preferences") {
+      const result = await env.DB.prepare(`SELECT channel,enabled,updated_at FROM notification_preferences WHERE user_id=? ORDER BY channel`).bind(user.id).all();
+      return json(result.results);
+    }
+    if (request.method === "PATCH" && action === "notification-preferences") {
+      const body = await request.json().catch(() => null);
+      if (!body?.channel || !["in_app", "email", "sms", "whatsapp"].includes(body.channel) || typeof body.enabled !== "boolean") return fail("Invalid notification preference");
+      const now = new Date().toISOString();
+      await env.DB.prepare(`INSERT INTO notification_preferences (user_id,channel,enabled,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id,channel) DO UPDATE SET enabled=excluded.enabled,updated_at=excluded.updated_at`).bind(user.id, body.channel, body.enabled ? 1 : 0, now).run();
+      return json({ channel: body.channel, enabled: body.enabled, updated_at: now });
     }
     if (request.method === "GET" && action === "policies") {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);

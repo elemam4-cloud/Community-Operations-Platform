@@ -1,9 +1,9 @@
 const storeKey='community-operations-demo-v2';
 const state=JSON.parse(localStorage.getItem(storeKey)||'{"records":[]}');
-const apiConfig={base:(window.COMMUNITY_API_BASE||'').replace(/\/$/,''),community:window.COMMUNITY_ID||'demo-community'};
+const apiConfig={base:(window.COMMUNITY_API_BASE||'').replace(/\/$/,''),community:window.COMMUNITY_ID||'demo-community',authHeaders:window.COMMUNITY_AUTH_HEADERS||{}};
 async function apiRequest(path,options={}){
   if(!apiConfig.base) throw new Error('API base is not configured');
-  const res=await fetch(`${apiConfig.base}/api/${apiConfig.community}/${path}`,{...options,headers:{'content-type':'application/json',...(options.headers||{})}});
+  const res=await fetch(`${apiConfig.base}/api/${apiConfig.community}/${path}`,{...options,headers:{'content-type':'application/json',...apiConfig.authHeaders,...(options.headers||{})}});
   const body=await res.json().catch(()=>({}));
   if(!res.ok) throw new Error(body.error||`Request failed (${res.status})`);
   return body.data;
@@ -35,6 +35,7 @@ window.CommunityAPI={
 let currentType='general';
 const $=s=>document.querySelector(s);
 function render(){document.querySelectorAll('[data-list]').forEach(list=>{const rows=state.records.filter(r=>r.type===list.dataset.list);list.innerHTML=rows.length?rows.map(r=>`<div class="record"><b>${r.name}</b><div class="muted">${r.place||'—'} · ${new Date(r.createdAt).toLocaleString('ar-EG')}</div></div>`).join(''):'<div class="muted">لا توجد سجلات مضافة بعد.</div>'});$('#recordCount').textContent=state.records.length}
+async function hydrateDashboard(){if(!apiConfig.base)return;try{const snapshot=await window.CommunityAPI.getDashboard();const m=snapshot.metrics||{};const values={peopleCount:m.users,carCount:m.vehicles};for(const [id,value] of Object.entries(values)){if(Number.isFinite(value)&&document.getElementById(id))document.getElementById(id).textContent=value.toLocaleString('en-US')}}catch(error){console.warn('Operational dashboard API unavailable; keeping demo values',error.message)}}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('#'+b.dataset.view).classList.add('active');render()});
 function openBox(type){currentType=type;$('#modalTitle').textContent='إضافة '+type;$('#modal').classList.add('open');$('#name').focus()}
 function closeBox(){$('#modal').classList.remove('open')}
@@ -42,4 +43,5 @@ document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>openBox(b.da
 $('#add').onclick=()=>openBox('سجل');$('#close').onclick=closeBox;
 $('#save').onclick=()=>{const name=$('#name').value.trim();if(!name){alert('يرجى إدخال الاسم أو الوصف');return}state.records.push({type:currentType,name,place:$('#place').value.trim(),priority:$('#priority').value,createdAt:new Date().toISOString()});localStorage.setItem(storeKey,JSON.stringify(state));$('#name').value='';$('#place').value='';closeBox();render();alert('تم الحفظ محليًا بنجاح')};
 render();
+hydrateDashboard();
 

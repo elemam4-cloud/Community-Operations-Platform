@@ -46,6 +46,38 @@ export default {
       const result = await env.DB.prepare(`SELECT id,plate_number,access_tag,status,primary_user_id FROM vehicles WHERE community_id=? ORDER BY plate_number`).bind(communityId).all();
       return json(result.results);
     }
+    if (request.method === "GET" && action === "parking") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT id,code,zone,assigned_unit_id,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "parking-assignments") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.parking_space_id || !body?.unit_id) return fail("Parking space and unit are required");
+      const space = await env.DB.prepare(`SELECT id,status FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
+      if (!space) return fail("Parking space not found", 404);
+      if (space.status === "assigned") return fail("Parking space is already assigned", 409);
+      await env.DB.prepare(`UPDATE parking_spaces SET assigned_unit_id=?,status='assigned' WHERE id=? AND community_id=?`).bind(body.unit_id, body.parking_space_id, communityId).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.assign", "parking_space", body.parking_space_id, new Date().toISOString()).run();
+      return json({ id: body.parking_space_id, status: "assigned" }, 201);
+    }
+    if (request.method === "POST" && action === "gate-check") {
+      if (!can(userRole, "permit") && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.permit_id) return fail("Permit is required");
+      const permit = await env.DB.prepare(`SELECT id,status,expires_at FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
+      const allowed = Boolean(permit && permit.status === "active" && new Date(permit.expires_at).getTime() > Date.now());
+      return json({ allowed, reason: allowed ? "active_permit" : "missing_or_expired_permit" });
+    }
+    if (request.method === "POST" && action === "gate-events") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.gate_name || !body?.direction || !body?.decision) return fail("Gate event fields are incomplete");
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO gate_events (id,community_id,permit_id,vehicle_id,gate_name,direction,decision,captured_at,source) VALUES (?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.vehicle_id || null, body.gate_name, body.direction, body.decision, new Date().toISOString(), body.source || "manual").run();
+      return json({ id }, 201);
+    }
     if (request.method === "POST" && action === "permits") {
       if (!can(userRole, "permit")) return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);

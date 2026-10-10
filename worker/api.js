@@ -24,6 +24,11 @@ async function policy(db, communityId, key, fallback = true) {
   return row ? Boolean(row.enabled) : fallback;
 }
 
+async function moduleStatus(db, communityId, key) {
+  const row = await db.prepare(`SELECT status FROM community_modules WHERE community_id=? AND module_key=?`).bind(communityId, key).first();
+  return row?.status || "enabled";
+}
+
 const can = (userRole, action) => userRole === "admin" ||
   (action === "read" && ["operations", "security", "resident", "provider"].includes(userRole)) ||
   (action === "permit" && ["operations", "security", "resident"].includes(userRole)) ||
@@ -41,6 +46,14 @@ export default {
     const userRole = await role(env.DB, user.id, communityId);
     if (!userRole) return fail("Community membership required", 403);
     const action = parts[2];
+    const moduleByAction = {
+      units: "core_identity", vehicles: "vehicles_parking", parking: "vehicles_parking", "parking-assignments": "vehicles_parking", "parking-claim": "vehicles_parking", "parking-occupancy": "vehicles_parking",
+      permits: "permits_visitors", "permit-revoke": "permits_visitors", "gate-check": "access_security", "gate-events": "access_security",
+      "maintenance-tickets": "maintenance", announcements: "information_center", notifications: "information_center", "unit-mailbox": "unit_mailbox",
+      leases: "leases", "lease-payments": "lease_payments", "commercial-units": "commercial_operations", "loading-slots": "commercial_operations", "loading-bookings": "commercial_operations"
+    };
+    const moduleKey = moduleByAction[action];
+    if (moduleKey && await moduleStatus(env.DB, communityId, moduleKey) === "disabled") return fail("This module is disabled for the community", 404);
     if (request.method === "GET" && action === "units") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
       const result = await env.DB.prepare(`SELECT id,code,status,building_id FROM units WHERE community_id=? ORDER BY code`).bind(communityId).all();

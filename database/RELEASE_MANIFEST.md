@@ -18,7 +18,8 @@
 5. Run both verification commands.
 6. Run `node worker/reminders.smoke.mjs`.
 7. Run `node database/sqlite-restore.smoke.mjs`.
-8. Confirm that authentication, role scoping, module states, audit events, notifications, leases, and unit mailboxes behave as expected.
+8. Run `node worker/sqlite-integration.smoke.mjs`.
+9. Confirm that authentication, role scoping, module states, audit events, notifications, leases, and unit mailboxes behave as expected.
 
 The release archive contains the source required to reconstruct the application. Sites is a deployment surface, not the canonical source or backup location.
 

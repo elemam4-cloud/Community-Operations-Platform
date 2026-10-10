@@ -10,6 +10,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `GET /api/{community_id}/maintenance-tickets` — residents receive their own tickets.
 - `GET /api/{community_id}/announcements` — the information center feed; scheduled items appear only when their time arrives.
 - `GET /api/{community_id}/notifications` — current user only.
+- `GET /api/{community_id}/notification-preferences` — current user's delivery preferences.
 - `GET /api/{community_id}/modules` — operations/admin view module activation states.
 - `GET /api/{community_id}/unit-mailbox?unit_id=...` — digital mailbox for an authorized unit.
 
@@ -30,6 +31,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `PATCH /api/{community_id}/maintenance-tickets` — update status; residents can update only their own tickets.
 - `POST /api/{community_id}/announcements` — publish or schedule an information item and queue notifications for the selected audience and channels.
 - `PATCH /api/{community_id}/notifications` — mark a notification read; only its owner can do so.
+- `PATCH /api/{community_id}/notification-preferences` — enable or disable a delivery channel for the current user.
 - `POST /api/{community_id}/unit-mailbox` — operations/security place a message, document, parcel, registered mail, or notice in a unit mailbox.
 - `PATCH /api/{community_id}/unit-mailbox` — authorized users mark an item read, awaiting collection, collected, or archived.
 - `GET /api/{community_id}/policies` — operations/admin view policy switches.

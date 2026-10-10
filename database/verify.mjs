@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const schema = fs.readFileSync(new URL("./schema.sql", import.meta.url), "utf8");
 const seed = fs.readFileSync(new URL("./seed.sql", import.meta.url), "utf8");
 const requiredTables = [
-  "communities", "users", "user_roles", "units", "unit_memberships",
+  "communities", "community_policies", "users", "user_roles", "units", "unit_memberships",
   "vehicles", "parking_spaces", "permits", "gate_events",
   "maintenance_tickets", "ticket_history", "announcements",
   "notifications", "audit_events"

@@ -1,41 +1,36 @@
-# API contract v0.5
+# API contract v0.6
 
-All endpoints are scoped by `community_id` and require an authenticated user. Responses use a stable envelope: `{ data, error, meta }`.
+The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every response is `{ data, error }`, and every request requires an authenticated identity plus community membership.
 
-## Residents and units
+## Read operations
 
-- `GET /communities/{community_id}/units?search=` — searchable units.
-- `POST /communities/{community_id}/units` — create a unit.
-- `GET /communities/{community_id}/residents?unit_id=` — list residents.
-- `POST /communities/{community_id}/residents` — create a resident membership.
+- `GET /api/{community_id}/units`
+- `GET /api/{community_id}/vehicles` — residents receive their own vehicles; operations and security roles receive the operational list.
+- `GET /api/{community_id}/parking`
+- `GET /api/{community_id}/maintenance-tickets` — residents receive their own tickets.
+- `GET /api/{community_id}/announcements`
+- `GET /api/{community_id}/notifications` — current user only.
 
-## Vehicles and parking
+## Vehicles, access, and permits
 
-- `GET /communities/{community_id}/vehicles?status=` — list vehicles.
-- `POST /communities/{community_id}/vehicles` — register a vehicle.
-- `POST /communities/{community_id}/parking/assign` — assign a parking space.
-- `GET /communities/{community_id}/parking/availability` — available spaces.
-
-## Permits and access
-
-- `POST /communities/{community_id}/permits` — issue a time-bounded permit.
-- `POST /communities/{community_id}/permits/{permit_id}/revoke` — revoke a permit.
-- `POST /communities/{community_id}/gate-events/check` — check a person/vehicle.
-- `POST /communities/{community_id}/gate-events` — append a gate event.
+- `POST /api/{community_id}/vehicles` — register a vehicle; a resident is always the owner of the new record.
+- `POST /api/{community_id}/parking-assignments` — operations/admin assignment with audit event.
+- `POST /api/{community_id}/permits` — issue a time-bounded permit.
+- `POST /api/{community_id}/permit-revoke` — revoke an active permit and record the reason.
+- `POST /api/{community_id}/gate-check` — allow only when the permit is active, started, and not expired.
+- `POST /api/{community_id}/gate-events` — append a gate decision event.
 
 ## Maintenance and communication
 
-- `POST /communities/{community_id}/maintenance-tickets` — create a ticket.
-- `PATCH /communities/{community_id}/maintenance-tickets/{ticket_id}` — update status or assignment.
-- `POST /communities/{community_id}/announcements` — publish a notice.
-- `GET /communities/{community_id}/notifications` — list notifications for the current user.
-- `POST /notifications/{notification_id}/read` — mark as read.
+- `POST /api/{community_id}/maintenance-tickets` — create a ticket.
+- `PATCH /api/{community_id}/maintenance-tickets` — update status; residents can update only their own tickets.
+- `POST /api/{community_id}/announcements` — publish and queue in-app notifications for active users.
+- `PATCH /api/{community_id}/notifications` — mark a notification read; only its owner can do so.
 
 ## Safety rules
 
-- Permit creation validates expiry, unit access and issuer role.
-- Gate events are append-only and cannot be edited through the client.
-- Every mutation writes an audit event.
-- List endpoints paginate and never return unrestricted personal data.
-- Integration adapters translate external RFID/ANPR events into the same gate-event contract.
+- Gate events and audit events are append-only through the client contract.
+- Mutations write audit events where applicable.
+- Resident list operations are scoped to resident-owned records.
+- External RFID/ANPR adapters should translate device events into the gate-event contract rather than bypassing authorization.
 

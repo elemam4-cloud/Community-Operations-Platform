@@ -5,6 +5,7 @@
 Supported first slice:
 
 - `GET /api/{community_id}/units`
+- `GET /api/{community_id}/dashboard`
 - `GET /api/{community_id}/vehicles`
 - `GET /api/{community_id}/parking`
 - `POST /api/{community_id}/parking-assignments`

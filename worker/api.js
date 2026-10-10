@@ -112,6 +112,14 @@ export default {
       const starts = new Date(body.starts_at).getTime();
       const expires = new Date(body.expires_at).getTime();
       if (!Number.isFinite(starts) || !Number.isFinite(expires) || expires <= starts) return fail("Permit time range is invalid");
+      if (userRole === "resident" && body.unit_id) {
+        const membership = await env.DB.prepare(`SELECT unit_id FROM unit_memberships WHERE unit_id=? AND user_id=?`).bind(body.unit_id, user.id).first();
+        if (!membership) return fail("Resident is not authorized for this unit", 403);
+      }
+      if (userRole === "resident" && body.vehicle_id) {
+        const vehicle = await env.DB.prepare(`SELECT id FROM vehicles WHERE id=? AND community_id=? AND primary_user_id=?`).bind(body.vehicle_id, communityId, user.id).first();
+        if (!vehicle) return fail("Resident is not authorized for this vehicle", 403);
+      }
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO permits (id,community_id,issued_by,unit_id,vehicle_id,subject_name,permit_type,starts_at,expires_at,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.unit_id || null, body.vehicle_id || null, body.subject_name, body.permit_type, body.starts_at, body.expires_at, "active", new Date().toISOString()).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "permit.issue", "permit", id, new Date().toISOString()).run();

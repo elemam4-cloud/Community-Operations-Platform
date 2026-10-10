@@ -56,7 +56,7 @@ export default {
     }
     if (request.method === "GET" && action === "parking") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,code,zone,parking_type,assigned_unit_id,access_control,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      const result = await env.DB.prepare(`SELECT id,code,zone,parking_type,allocation_mode,assigned_unit_id,access_control,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
       return json(result.results);
     }
     if (request.method === "GET" && action === "maintenance-tickets") {
@@ -85,7 +85,7 @@ export default {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.parking_space_id || !body?.unit_id) return fail("Parking space and unit are required");
-      const space = await env.DB.prepare(`SELECT id,status,parking_type,assigned_unit_id FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
+      const space = await env.DB.prepare(`SELECT id,status,parking_type,allocation_mode,assigned_unit_id FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
       if (!space) return fail("Parking space not found", 404);
       if (space.status === "assigned") return fail("Parking space is already assigned", 409);
       if (space.parking_type === "private" && space.assigned_unit_id && space.assigned_unit_id !== body.unit_id) return fail("Private parking belongs to another unit", 403);

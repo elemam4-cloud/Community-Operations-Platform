@@ -62,6 +62,7 @@ export default {
         ["vehicles", `SELECT count(*) AS count FROM vehicles WHERE community_id=? AND status='active'`],
         ["parking", `SELECT count(*) AS count FROM parking_spaces WHERE community_id=?`],
         ["available_parking", `SELECT count(*) AS count FROM parking_spaces WHERE community_id=? AND occupancy_state='vacant'`],
+        ["unknown_parking", `SELECT count(*) AS count FROM parking_spaces WHERE community_id=? AND occupancy_state='unknown'`],
         ["active_permits", `SELECT count(*) AS count FROM permits WHERE community_id=? AND status='active'`],
         ["open_tickets", `SELECT count(*) AS count FROM maintenance_tickets WHERE community_id=? AND status NOT IN ('resolved','closed')`],
         ["expected_visits", `SELECT count(*) AS count FROM visits WHERE community_id=? AND status='expected'`],

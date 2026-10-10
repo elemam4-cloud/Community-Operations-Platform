@@ -5,7 +5,7 @@ class FakeDB {
   constructor(){this.calls=[];}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:null,all:async()=>({results:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};
@@ -35,6 +35,7 @@ res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'PATCH
 assert.equal(res.status,403,'resident cannot update another user ticket');
 res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Water maintenance',body:'Scheduled maintenance tomorrow'})}),env);
 assert.equal(res.status,201,'admin can publish an announcement');
+assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO notifications')),'announcement notifications were queued');
 res=await api.fetch(req('/api/demo-community/announcements',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
 assert.equal(res.status,200,'resident can read announcements');
 res=await api.fetch(req('/api/demo-community/notifications',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);

@@ -8,10 +8,16 @@ Before hosting the dashboard with the Worker, set:
 <script>
   window.COMMUNITY_API_BASE = "https://api.example.com";
   window.COMMUNITY_ID = "community-id";
+  window.COMMUNITY_AUTH_HEADERS = {
+    "oai-authenticated-user-id": "authenticated-user-id",
+    "oai-authenticated-user-email": "authenticated-user-email"
+  };
 </script>
 ```
 
-The adapter covers units, vehicles, parking, maintenance tickets, announcements, notifications, and the first write operations. Authentication is intentionally delegated to the hosting/identity layer; credentials and identity tokens are never stored in the browser demo state.
+The adapter covers dashboard metrics, units, vehicles, parking, visits, maintenance tickets, announcements, notifications, notification preferences, leases, lease payments, unit mailboxes, modules, and the first write operations. Authentication is intentionally delegated to the hosting/identity layer; credentials and identity tokens are never stored in the browser demo state.
+
+The dashboard calls `GET /api/{community_id}/dashboard` during startup when `COMMUNITY_API_BASE` is present. If the request fails, it keeps the clearly labeled demo values and does not silently treat demo data as production data.
 
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

@@ -1,5 +1,5 @@
 -- Demo seed data only. Replace all IDs and values before production use.
-INSERT INTO communities (id,name,timezone,default_language,created_at) VALUES ('demo-community','مجتمع الواحة','Africa/Cairo','ar','2026-10-09T08:00:00Z');
+INSERT INTO communities (id,name,community_type,timezone,default_language,created_at) VALUES ('demo-community','مجتمع الواحة','residential','Africa/Cairo','ar','2026-10-09T08:00:00Z');
 INSERT INTO community_policies (community_id,policy_key,enabled) VALUES ('demo-community','permit_time_window',1),('demo-community','resident_ownership_scope',1),('demo-community','gate_value_validation',1),('demo-community','resident_vehicle_scope',1),('demo-community','parking_unit_validation',1);
 INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES ('demo-community','access_verification_mode','qr_or_tag');
 INSERT INTO buildings (id,community_id,name,created_at) VALUES ('building-a','demo-community','المبنى A','2026-10-09T08:00:00Z'),('building-b','demo-community','المبنى B','2026-10-09T08:00:00Z');

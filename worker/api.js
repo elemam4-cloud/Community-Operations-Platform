@@ -197,8 +197,10 @@ export default {
       const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.host_unit_id, communityId).first();
       if (!unit) return fail("Host unit not found", 404);
       if (body.permit_id) {
-        const permit = await env.DB.prepare(`SELECT id,status,unit_id FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
-        if (!permit || permit.status !== "active" || (permit.unit_id && permit.unit_id !== body.host_unit_id)) return fail("Permit is invalid for this visit", 403);
+        const permit = await env.DB.prepare(`SELECT id,status,unit_id,starts_at,expires_at FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
+        const now = Date.now();
+        const validWindow = permit && new Date(permit.starts_at).getTime() <= now && new Date(permit.expires_at).getTime() > now;
+        if (!permit || permit.status !== "active" || !validWindow || (permit.unit_id && permit.unit_id !== body.host_unit_id)) return fail("Permit is invalid or outside its valid time window", 403);
       }
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO visits (id,community_id,permit_id,host_unit_id,visitor_name,visitor_type,vehicle_plate,status,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.host_unit_id, body.visitor_name, body.visitor_type || "visitor", body.vehicle_plate || null, "expected", user.id, new Date().toISOString()).run();

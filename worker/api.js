@@ -69,7 +69,9 @@ export default {
       ];
       const data = {};
       for (const [key, sql] of queries) data[key] = Number((await env.DB.prepare(sql).bind(...(key === "unread_notifications" ? [communityId, user.id] : [communityId])).first())?.count || 0);
-      return json({ community_id: communityId, generated_at: new Date().toISOString(), metrics: data });
+      const settings = await env.DB.prepare(`SELECT setting_key,setting_value FROM community_settings WHERE community_id=? AND setting_key IN ('operational_state','last_successful_sync_at')`).bind(communityId).all();
+      const operational = Object.fromEntries((settings.results || []).map(row => [row.setting_key, row.setting_value]));
+      return json({ community_id: communityId, generated_at: new Date().toISOString(), operational_state: operational.operational_state || "online", last_successful_sync_at: operational.last_successful_sync_at || null, metrics: data });
     }
     if (request.method === "GET" && action === "units") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);

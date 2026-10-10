@@ -37,6 +37,8 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `GET /api/{community_id}/settings` — operations/admin view multi-mode settings.
 - `PATCH /api/{community_id}/settings` — operations/admin select an approved access verification mode.
 - `PATCH /api/{community_id}/modules` — operations/admin enable, disable, or pilot a module without deleting its data.
+
+When a module is `disabled`, its API routes return `404` while its records remain intact. `pilot` is available for controlled rollout; the current authorization rules still apply.
 - `GET /api/{community_id}/commercial-units` — operations/security view tenants and commercial spaces.
 - `POST /api/{community_id}/commercial-units` — operations/admin create a tenant space.
 - `GET /api/{community_id}/leases` — operations/security view all leases; residents see only leases linked to their user.

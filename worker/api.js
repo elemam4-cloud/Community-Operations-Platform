@@ -19,6 +19,11 @@ async function role(db, userId, communityId) {
   return row?.role || null;
 }
 
+async function policy(db, communityId, key, fallback = true) {
+  const row = await db.prepare(`SELECT enabled FROM community_policies WHERE community_id=? AND policy_key=?`).bind(communityId, key).first();
+  return row ? Boolean(row.enabled) : fallback;
+}
+
 const can = (userRole, action) => userRole === "admin" ||
   (action === "read" && ["operations", "security", "resident", "provider"].includes(userRole)) ||
   (action === "permit" && ["operations", "security", "resident"].includes(userRole)) ||
@@ -43,7 +48,8 @@ export default {
     }
     if (request.method === "GET" && action === "vehicles") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const residentScope = userRole === "resident" ? " AND primary_user_id=?" : "";
+      const scopeEnabled = await policy(env.DB, communityId, "resident_vehicle_scope");
+      const residentScope = userRole === "resident" && scopeEnabled ? " AND primary_user_id=?" : "";
       const params = userRole === "resident" ? [communityId, user.id] : [communityId];
       const result = await env.DB.prepare(`SELECT id,plate_number,access_tag,status,primary_user_id FROM vehicles WHERE community_id=?${residentScope} ORDER BY plate_number`).bind(...params).all();
       return json(result.results);
@@ -82,8 +88,10 @@ export default {
       const space = await env.DB.prepare(`SELECT id,status FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
       if (!space) return fail("Parking space not found", 404);
       if (space.status === "assigned") return fail("Parking space is already assigned", 409);
-      const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.unit_id, communityId).first();
-      if (!unit) return fail("Unit not found", 404);
+      if (await policy(env.DB, communityId, "parking_unit_validation")) {
+        const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.unit_id, communityId).first();
+        if (!unit) return fail("Unit not found", 404);
+      }
       await env.DB.prepare(`UPDATE parking_spaces SET assigned_unit_id=?,status='assigned' WHERE id=? AND community_id=?`).bind(body.unit_id, body.parking_space_id, communityId).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.assign", "parking_space", body.parking_space_id, new Date().toISOString()).run();
       return json({ id: body.parking_space_id, status: "assigned" }, 201);
@@ -101,8 +109,10 @@ export default {
       if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.gate_name || !body?.direction || !body?.decision) return fail("Gate event fields are incomplete");
-      if (!["entry", "exit"].includes(body.direction)) return fail("Invalid gate direction");
-      if (!["allowed", "denied"].includes(body.decision)) return fail("Invalid gate decision");
+      if (await policy(env.DB, communityId, "gate_value_validation")) {
+        if (!["entry", "exit"].includes(body.direction)) return fail("Invalid gate direction");
+        if (!["allowed", "denied"].includes(body.decision)) return fail("Invalid gate decision");
+      }
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO gate_events (id,community_id,permit_id,vehicle_id,gate_name,direction,decision,captured_at,source) VALUES (?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.vehicle_id || null, body.gate_name, body.direction, body.decision, new Date().toISOString(), body.source || "manual").run();
       return json({ id }, 201);
@@ -113,12 +123,13 @@ export default {
       if (!body?.subject_name || !body?.permit_type || !body?.starts_at || !body?.expires_at) return fail("Permit fields are incomplete");
       const starts = new Date(body.starts_at).getTime();
       const expires = new Date(body.expires_at).getTime();
-      if (!Number.isFinite(starts) || !Number.isFinite(expires) || expires <= starts) return fail("Permit time range is invalid");
-      if (userRole === "resident" && body.unit_id) {
+      if (await policy(env.DB, communityId, "permit_time_window") && (!Number.isFinite(starts) || !Number.isFinite(expires) || expires <= starts)) return fail("Permit time range is invalid");
+      const ownershipScope = await policy(env.DB, communityId, "resident_ownership_scope");
+      if (ownershipScope && userRole === "resident" && body.unit_id) {
         const membership = await env.DB.prepare(`SELECT unit_id FROM unit_memberships WHERE unit_id=? AND user_id=?`).bind(body.unit_id, user.id).first();
         if (!membership) return fail("Resident is not authorized for this unit", 403);
       }
-      if (userRole === "resident" && body.vehicle_id) {
+      if (ownershipScope && userRole === "resident" && body.vehicle_id) {
         const vehicle = await env.DB.prepare(`SELECT id FROM vehicles WHERE id=? AND community_id=? AND primary_user_id=?`).bind(body.vehicle_id, communityId, user.id).first();
         if (!vehicle) return fail("Resident is not authorized for this vehicle", 403);
       }

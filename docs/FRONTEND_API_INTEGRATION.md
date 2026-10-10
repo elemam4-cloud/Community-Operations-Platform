@@ -29,5 +29,7 @@ Vehicle registration is dual-mode as well: the vehicle form sends `POST /api/{co
 
 The parking panel sends `POST /api/{community_id}/parking-occupancy` with the selected state and source (`manual`, `sensor`, or `camera`). The resulting indicator is shown to the operator and the dashboard is refreshed.
 
+The visitor-permit form sends `POST /api/{community_id}/permits` with a 24-hour visitor window and optional unit association when server-backed mode is active. The server validates time ranges, ownership scope, and role permissions.
+
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

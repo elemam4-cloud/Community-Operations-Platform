@@ -5,6 +5,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 ## Read operations
 
 - `GET /api/{community_id}/units`
+- `GET /api/{community_id}/dashboard` — role-scoped operational metrics for the community dashboard.
 - `GET /api/{community_id}/vehicles` — residents receive their own vehicles; operations and security roles receive the operational list.
 - `GET /api/{community_id}/parking`
 - `GET /api/{community_id}/maintenance-tickets` — residents receive their own tickets.

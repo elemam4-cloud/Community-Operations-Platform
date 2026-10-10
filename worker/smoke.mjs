@@ -20,5 +20,9 @@ assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO permits')),'permit in
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Test ticket'})}),env);
 assert.equal(res.status,201,'admin can create a maintenance ticket');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO audit_events')),'audit event was written');
+res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Water maintenance',body:'Scheduled maintenance tomorrow'})}),env);
+assert.equal(res.status,201,'admin can publish an announcement');
+res=await api.fetch(req('/api/demo-community/notifications',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
+assert.equal(res.status,200,'resident can read notifications');
 console.log('worker smoke tests: OK');
 

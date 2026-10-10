@@ -97,6 +97,20 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.assign", "parking_space", body.parking_space_id, new Date().toISOString()).run();
       return json({ id: body.parking_space_id, status: "assigned" }, 201);
     }
+    if (request.method === "POST" && action === "parking-claim") {
+      if (userRole !== "resident") return fail("Only residents can claim first-come parking", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.parking_space_id || !body?.unit_id) return fail("Parking space and unit are required");
+      const membership = await env.DB.prepare(`SELECT unit_id FROM unit_memberships WHERE unit_id=? AND user_id=?`).bind(body.unit_id, user.id).first();
+      if (!membership) return fail("Resident is not authorized for this unit", 403);
+      const space = await env.DB.prepare(`SELECT id,status,allocation_mode FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
+      if (!space) return fail("Parking space not found", 404);
+      if (space.allocation_mode !== "first_come") return fail("Parking space is not first-come", 409);
+      if (space.status !== "available") return fail("Parking space is not available", 409);
+      await env.DB.prepare(`UPDATE parking_spaces SET assigned_unit_id=?,status='assigned' WHERE id=? AND community_id=? AND status='available' AND allocation_mode='first_come'`).bind(body.unit_id, body.parking_space_id, communityId).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "parking.claim", "parking_space", body.parking_space_id, new Date().toISOString()).run();
+      return json({ id: body.parking_space_id, status: "assigned" }, 201);
+    }
     if (request.method === "POST" && action === "gate-check") {
       if (!can(userRole, "permit") && userRole !== "security") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);

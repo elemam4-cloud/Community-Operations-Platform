@@ -264,6 +264,19 @@ export default {
       const result = await env.DB.prepare(`SELECT id,code,zone,booking_mode,status FROM loading_slots WHERE community_id=? ORDER BY code`).bind(communityId).all();
       return json(result.results);
     }
+    if (request.method === "POST" && action === "loading-bookings") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.loading_slot_id || !body?.carrier_name || !body?.starts_at || !body?.ends_at) return fail("Loading booking fields are incomplete");
+      const starts = new Date(body.starts_at).getTime();
+      const ends = new Date(body.ends_at).getTime();
+      if (!Number.isFinite(starts) || !Number.isFinite(ends) || ends <= starts) return fail("Loading booking time range is invalid");
+      const slot = await env.DB.prepare(`SELECT id,status FROM loading_slots WHERE id=? AND community_id=?`).bind(body.loading_slot_id, communityId).first();
+      if (!slot || slot.status !== "active") return fail("Loading slot not found or inactive", 404);
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO loading_bookings (id,community_id,loading_slot_id,commercial_unit_id,carrier_name,vehicle_plate,starts_at,ends_at,status,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.loading_slot_id, body.commercial_unit_id || null, body.carrier_name, body.vehicle_plate || null, body.starts_at, body.ends_at, "requested", user.id, new Date().toISOString()).run();
+      return json({ id, status: "requested" }, 201);
+    }
     return fail("Not found", 404);
   }
 };

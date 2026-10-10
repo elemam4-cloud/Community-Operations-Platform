@@ -19,5 +19,11 @@ The adapter covers dashboard metrics, units, vehicles, parking, visits, maintena
 
 The dashboard calls `GET /api/{community_id}/dashboard` during startup when `COMMUNITY_API_BASE` is present. If the request fails, it keeps the clearly labeled demo values and does not silently treat demo data as production data.
 
+The maintenance action is also dual-mode: the maintenance form writes to `POST /api/{community_id}/maintenance-tickets` when the API is configured, while remaining a local demo record when it is not. The dashboard refreshes its metrics after a successful server-backed ticket.
+
+The dashboard displays the server-provided `operational_state` and `last_successful_sync_at` values. During local continuity, manual fallback, or recovery review, it warns operators not to treat stale parking or access data as current.
+
+The dashboard also exposes a controlled manual-gate panel for authorized operators. It sends `POST /api/{community_id}/gate-events` with `manual_override=true` and a required reason when server-backed mode is active; the server remains the authority for role and policy checks.
+
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

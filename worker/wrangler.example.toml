@@ -1,0 +1,12 @@
+name = "community-operations-api"
+main = "api.js"
+compatibility_date = "2026-10-10"
+
+# Copy this file to wrangler.toml outside the repository only after creating
+# the real D1 database. Never commit the real database_id or deployment secrets.
+[[d1_databases]]
+binding = "DB"
+database_name = "community-operations"
+database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+
+

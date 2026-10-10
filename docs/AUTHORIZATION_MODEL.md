@@ -35,6 +35,10 @@ audit.read
 - `resident`: own unit, own vehicles, permits.issue for own unit, maintenance.create/own-ticket-read, notifications.read.
 - `provider`: assigned maintenance tickets and the permit needed for an assigned visit.
 
+## Manual gate operation
+
+Manual gate opening is an explicit, policy-controlled operation. It may be enabled for a community as `manual_gate_override`; it is available to `security`, `operations`, and `admin` roles, whether or not electricity and normal readers are available. Every manual event must include the gate, direction, decision, operator identity, timestamp, and a reason. The event is stored as a gate event and mirrored into the audit trail. Disabling the policy removes the option without deleting historical events.
+
 ## Sensitive operations
 
 Changing roles, revoking a permanent vehicle access tag, exporting personal data, deleting a community, and changing retention settings require elevated permission and an audit reason.

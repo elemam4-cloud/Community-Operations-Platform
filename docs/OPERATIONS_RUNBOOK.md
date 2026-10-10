@@ -1,5 +1,7 @@
 # Community Operations Platform — First Operational Runbook
 
+Arabic companion: `docs/OPERATIONS_RUNBOOK_AR.md`.
+
 ## 1. Community setup
 
 1. Create the community and choose `residential`, `commercial`, `mixed_use`, or `campus`.

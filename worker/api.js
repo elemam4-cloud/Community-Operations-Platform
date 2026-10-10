@@ -164,12 +164,17 @@ export default {
       if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.gate_name || !body?.direction || !body?.decision) return fail("Gate event fields are incomplete");
+      const manualOverride = body.manual_override === true;
+      if (manualOverride && !await policy(env.DB, communityId, "manual_gate_override", false)) return fail("Manual gate override is disabled");
+      if (manualOverride && !body.reason) return fail("A reason is required for manual gate override");
+      if (!manualOverride && !body.permit_id && !body.vehicle_id) return fail("Permit or vehicle is required unless manual override is used");
       if (await policy(env.DB, communityId, "gate_value_validation")) {
         if (!["entry", "exit"].includes(body.direction)) return fail("Invalid gate direction");
         if (!["allowed", "denied"].includes(body.decision)) return fail("Invalid gate decision");
       }
       const id = crypto.randomUUID();
       await env.DB.prepare(`INSERT INTO gate_events (id,community_id,permit_id,vehicle_id,gate_name,direction,decision,captured_at,source) VALUES (?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.vehicle_id || null, body.gate_name, body.direction, body.decision, new Date().toISOString(), body.source || "manual").run();
+      if (manualOverride) await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "gate.manual_override", "gate_event", id, JSON.stringify({reason: body.reason, source: body.source || "manual"}), new Date().toISOString()).run();
       return json({ id }, 201);
     }
     if (request.method === "POST" && action === "permits") {
@@ -350,7 +355,7 @@ export default {
     if (request.method === "PATCH" && action === "policies") {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
-      const allowedPolicies = ["permit_time_window", "resident_ownership_scope", "gate_value_validation", "resident_vehicle_scope", "parking_unit_validation"];
+      const allowedPolicies = ["permit_time_window", "resident_ownership_scope", "gate_value_validation", "manual_gate_override", "resident_vehicle_scope", "parking_unit_validation"];
       if (!body?.policy_key || !allowedPolicies.includes(body.policy_key) || typeof body.enabled !== "boolean") return fail("Invalid policy update");
       await env.DB.prepare(`INSERT INTO community_policies (community_id,policy_key,enabled) VALUES (?,?,?) ON CONFLICT(community_id,policy_key) DO UPDATE SET enabled=excluded.enabled`).bind(communityId, body.policy_key, body.enabled ? 1 : 0).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "policy.update", "community_policy", body.policy_key, JSON.stringify({enabled:body.enabled}), new Date().toISOString()).run();

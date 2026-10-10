@@ -30,6 +30,7 @@ window.CommunityAPI={
   updateLeasePayment:body=>apiRequest('lease-payments',{method:'PATCH',body:JSON.stringify(body)}),
   createPermit:body=>apiRequest('permits',{method:'POST',body:JSON.stringify(body)}),
   recordGateEvent:body=>apiRequest('gate-events',{method:'POST',body:JSON.stringify(body)}),
+  createVehicle:body=>apiRequest('vehicles',{method:'POST',body:JSON.stringify(body)}),
   publishAnnouncement:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)}),
   publishInformation:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)})
 };
@@ -46,7 +47,7 @@ function openBox(type){currentType=type;$('#modalTitle').textContent='إضافة
 function closeBox(){$('#modal').classList.remove('open')}
 document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>openBox(b.dataset.action));
 $('#add').onclick=()=>openBox('سجل');$('#close').onclick=closeBox;
-$('#save').onclick=async()=>{const name=$('#name').value.trim();const place=$('#place').value.trim();if(!name){alert('يرجى إدخال الاسم أو الوصف');return}if(currentType==='صيانة'&&apiConfig.base){try{await window.CommunityAPI.createTicket({title:name,description:place||null,priority:$('#priority').value==='عاجلة'?'urgent':$('#priority').value==='متوسطة'?'high':'normal',unit_id:place&&place.startsWith('unit-')?place:null});closeBox();render();await hydrateDashboard();alert('تم إرسال طلب الصيانة إلى النظام التشغيلي')}catch(error){alert(`تعذر إرسال طلب الصيانة: ${error.message}`)}return}state.records.push({type:currentType,name,place,priority:$('#priority').value,createdAt:new Date().toISOString()});localStorage.setItem(storeKey,JSON.stringify(state));$('#name').value='';$('#place').value='';closeBox();render();alert('تم الحفظ محليًا بنجاح')};
+$('#save').onclick=async()=>{const name=$('#name').value.trim();const place=$('#place').value.trim();if(!name){alert('يرجى إدخال الاسم أو الوصف');return}if(currentType==='صيانة'&&apiConfig.base){try{await window.CommunityAPI.createTicket({title:name,description:place||null,priority:$('#priority').value==='عاجلة'?'urgent':$('#priority').value==='متوسطة'?'high':'normal',unit_id:place&&place.startsWith('unit-')?place:null});closeBox();render();await hydrateDashboard();alert('تم إرسال طلب الصيانة إلى النظام التشغيلي')}catch(error){alert(`تعذر إرسال طلب الصيانة: ${error.message}`)}return}if(currentType==='سيارة'&&apiConfig.base){try{await window.CommunityAPI.createVehicle({plate_number:name,access_tag:place||null});closeBox();render();await hydrateDashboard();alert('تم تسجيل السيارة في النظام التشغيلي')}catch(error){alert(`تعذر تسجيل السيارة: ${error.message}`)}return}state.records.push({type:currentType,name,place,priority:$('#priority').value,createdAt:new Date().toISOString()});localStorage.setItem(storeKey,JSON.stringify(state));$('#name').value='';$('#place').value='';closeBox();render();alert('تم الحفظ محليًا بنجاح')};
 render();
 injectGateControls();
 hydrateDashboard();

@@ -8,7 +8,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `GET /api/{community_id}/vehicles` — residents receive their own vehicles; operations and security roles receive the operational list.
 - `GET /api/{community_id}/parking`
 - `GET /api/{community_id}/maintenance-tickets` — residents receive their own tickets.
-- `GET /api/{community_id}/announcements`
+- `GET /api/{community_id}/announcements` — the information center feed; scheduled items appear only when their time arrives.
 - `GET /api/{community_id}/notifications` — current user only.
 
 ## Vehicles, access, and permits
@@ -26,7 +26,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 
 - `POST /api/{community_id}/maintenance-tickets` — create a ticket.
 - `PATCH /api/{community_id}/maintenance-tickets` — update status; residents can update only their own tickets.
-- `POST /api/{community_id}/announcements` — publish and queue in-app notifications for active users.
+- `POST /api/{community_id}/announcements` — publish or schedule an information item and queue notifications for the selected audience and channels.
 - `PATCH /api/{community_id}/notifications` — mark a notification read; only its owner can do so.
 - `GET /api/{community_id}/policies` — operations/admin view policy switches.
 - `PATCH /api/{community_id}/policies` — operations/admin enable or disable an approved policy.
@@ -60,4 +60,6 @@ The controls above are configurable per community through `community_policies`. 
 Feature modes that have more than two states use `community_settings`. For example, `access_verification_mode` may be `qr_only`, `tag_only`, `qr_or_tag`, `anpr_only`, or `hybrid`. The demo defaults to `qr_or_tag`; ANPR/camera integration can be added without forcing every community to install cameras.
 
 Lease payments are lightweight operational records: amount, due date, status, and optional payment reference. Reminder delivery can use email, SMS, or WhatsApp adapters; the platform stores reminder timing without forcing one provider.
+
+When a `due` installment passes its due date, the read contract exposes it as `late` without destroying the original record. A scheduled notification worker can select upcoming or late installments, create in-app notifications, and hand delivery to the configured email/SMS/WhatsApp provider.
 

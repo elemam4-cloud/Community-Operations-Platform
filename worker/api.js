@@ -220,6 +220,42 @@ export default {
       const result = await env.DB.prepare(`SELECT id,channel,delivery_status,read_at,created_at FROM notifications WHERE community_id=? AND user_id=? ORDER BY created_at DESC LIMIT 100`).bind(communityId, user.id).all();
       return json(result.results);
     }
+    if (request.method === "GET" && action === "unit-mailbox") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const unitId = url.searchParams.get("unit_id");
+      if (userRole === "resident") {
+        const membership = await env.DB.prepare(`SELECT unit_id FROM unit_memberships WHERE unit_id=? AND user_id=? AND EXISTS (SELECT 1 FROM units WHERE units.id=unit_memberships.unit_id AND units.community_id=?)`).bind(unitId, user.id, communityId).first();
+        if (!membership) return fail("Resident is not authorized for this unit", 403);
+      }
+      if (!unitId) return fail("Unit is required");
+      const result = await env.DB.prepare(`SELECT id,unit_id,item_type,subject,body,reference_code,status,received_at,read_at,collected_at FROM unit_mail_items WHERE community_id=? AND unit_id=? ORDER BY received_at DESC LIMIT 100`).bind(communityId, unitId).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "unit-mailbox") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.unit_id || !body?.subject) return fail("Unit and subject are required");
+      if (body.item_type && !["message", "document", "parcel", "registered_mail", "notice"].includes(body.item_type)) return fail("Invalid mailbox item type");
+      const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.unit_id, communityId).first();
+      if (!unit) return fail("Unit not found", 404);
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO unit_mail_items (id,community_id,unit_id,item_type,subject,body,reference_code,status,received_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.unit_id, body.item_type || "message", body.subject, body.body || null, body.reference_code || null, body.item_type === "parcel" || body.item_type === "registered_mail" ? "awaiting_collection" : "unread", new Date().toISOString(), user.id).run();
+      return json({ id, status: body.item_type === "parcel" || body.item_type === "registered_mail" ? "awaiting_collection" : "unread" }, 201);
+    }
+    if (request.method === "PATCH" && action === "unit-mailbox") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.item_id || !["read", "unread", "awaiting_collection", "collected", "archived"].includes(body.status)) return fail("Invalid mailbox status");
+      const item = await env.DB.prepare(`SELECT id,unit_id FROM unit_mail_items WHERE id=? AND community_id=?`).bind(body.item_id, communityId).first();
+      if (!item) return fail("Mailbox item not found", 404);
+      if (userRole === "resident") {
+        const membership = await env.DB.prepare(`SELECT unit_id FROM unit_memberships WHERE unit_id=? AND user_id=?`).bind(item.unit_id, user.id).first();
+        if (!membership) return fail("Resident is not authorized for this unit", 403);
+      }
+      const now = new Date().toISOString();
+      await env.DB.prepare(`UPDATE unit_mail_items SET status=?,read_at=?,collected_at=? WHERE id=? AND community_id=?`).bind(body.status, body.status === "read" ? now : null, body.status === "collected" ? now : null, body.item_id, communityId).run();
+      return json({ id: body.item_id, status: body.status });
+    }
     if (request.method === "PATCH" && action === "notifications") {
       const body = await request.json().catch(() => null);
       if (!body?.notification_id) return fail("Notification is required");

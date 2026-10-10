@@ -5,7 +5,7 @@ class FakeDB {
   constructor(){this.calls=[];}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available',parking_type:'shared',assigned_unit_id:null}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('FROM users')?{id:args[0]}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available',parking_type:'shared',assigned_unit_id:null}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};
@@ -52,6 +52,13 @@ res=await api.fetch(req('/api/demo-community/settings',{method:'PATCH',headers:{
 assert.equal(res.status,200,'admin can choose access verification mode');
 res=await api.fetch(req('/api/demo-community/commercial-units',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({code:'SHOP-A01',tenant_name:'Demo Retail',category:'retail'})}),env);
 assert.equal(res.status,201,'admin can create a commercial unit');
+res=await api.fetch(req('/api/demo-community/leases',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_type:'residential_unit',subject_id:'unit-a204',lessor_name:'Community Owner',lessee_name:'Ahmed Resident',lessee_user_id:'user-ahmed',starts_at:'2026-10-01T00:00:00Z',ends_at:'2027-10-01T00:00:00Z',rent_amount:15000})}),env);
+assert.equal(res.status,201,'admin can create a residential lease');
+assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO leases')),'lease insert was executed');
+res=await api.fetch(req('/api/demo-community/leases',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_type:'residential_unit',subject_id:'unit-a204',lessor_name:'Community Owner',lessee_name:'Invalid',starts_at:'2027-10-01T00:00:00Z',ends_at:'2027-01-01T00:00:00Z'})}),env);
+assert.equal(res.status,400,'invalid lease time range is rejected');
+res=await api.fetch(req('/api/demo-community/leases',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
+assert.equal(res.status,200,'resident can read linked leases');
 res=await api.fetch(req('/api/demo-community/loading-bookings',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({loading_slot_id:'slot-1',carrier_name:'Demo Carrier',starts_at:'2026-10-10T18:00:00Z',ends_at:'2026-10-10T08:00:00Z'})}),env);
 assert.equal(res.status,400,'invalid loading booking time range is rejected');
 res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);

@@ -30,6 +30,13 @@ let response = await api.fetch(request('/api/demo-community/units', { headers: h
 assert.equal(response.status, 200);
 assert.equal((await response.json()).data.length, 3);
 
+response = await api.fetch(request('/api/demo-community/dashboard', { headers: headers('user-admin') }), env);
+assert.equal(response.status, 200);
+const dashboard = (await response.json()).data.metrics;
+assert.equal(dashboard.units, 3);
+assert.equal(dashboard.users, 4);
+assert.equal(dashboard.vehicles, 1);
+
 response = await api.fetch(request('/api/demo-community/visits', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ visitor_name: 'Integration Visitor', visitor_type: 'visitor', host_unit_id: 'unit-a204' }) }), env);
 assert.equal(response.status, 201);
 const visitId = (await response.json()).data.id;

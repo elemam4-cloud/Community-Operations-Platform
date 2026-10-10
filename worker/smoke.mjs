@@ -14,6 +14,8 @@ let res=await api.fetch(req('/api/demo-community/units'),env);
 assert.equal(res.status,401,'missing identity must be rejected');
 res=await api.fetch(req('/api/demo-community/units',{headers:{'oai-authenticated-user-id':'user-admin'}}),env);
 assert.equal(res.status,200,'admin can read units');
+res=await api.fetch(req('/api/demo-community/dashboard',{headers:{'oai-authenticated-user-id':'user-admin'}}),env);
+assert.equal(res.status,200,'admin can read dashboard metrics');
 res=await api.fetch(req('/api/demo-community/permits',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_name:'Test visitor',permit_type:'visitor',starts_at:'2026-10-10T08:00:00Z',expires_at:'2026-10-10T18:00:00Z'})}),env);
 assert.equal(res.status,201,'admin can issue a permit');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO permits')),'permit insert was executed');

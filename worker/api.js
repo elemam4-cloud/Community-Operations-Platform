@@ -246,6 +246,37 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "setting.update", "community_setting", body.setting_key, JSON.stringify({value:body.setting_value}), new Date().toISOString()).run();
       return json({ setting_key: body.setting_key, setting_value: body.setting_value });
     }
+    if (request.method === "GET" && action === "leases") {
+      if (!["admin", "operations", "security", "resident"].includes(userRole)) return fail("Forbidden", 403);
+      const residentScope = userRole === "resident" ? " AND lessee_user_id=?" : "";
+      const params = userRole === "resident" ? [communityId, user.id] : [communityId];
+      const result = await env.DB.prepare(`SELECT id,subject_type,subject_id,lessor_name,lessor_type,lessee_name,lessee_user_id,starts_at,ends_at,status,rent_amount,rent_currency,created_at FROM leases WHERE community_id=?${residentScope} ORDER BY starts_at DESC`).bind(...params).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "leases") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      const allowedSubjects = ["residential_unit", "commercial_unit"];
+      const allowedLessorTypes = ["community_owner", "external_owner"];
+      const allowedStatuses = ["draft", "active", "expired", "terminated"];
+      if (!body?.subject_type || !allowedSubjects.includes(body.subject_type) || !body?.subject_id || !body?.lessor_name || !body?.lessee_name || !body?.starts_at) return fail("Lease fields are incomplete");
+      if (body.lessor_type && !allowedLessorTypes.includes(body.lessor_type)) return fail("Invalid lessor type");
+      if (body.status && !allowedStatuses.includes(body.status)) return fail("Invalid lease status");
+      const starts = new Date(body.starts_at).getTime();
+      const ends = body.ends_at ? new Date(body.ends_at).getTime() : null;
+      if (!Number.isFinite(starts) || (body.ends_at && (!Number.isFinite(ends) || ends <= starts))) return fail("Lease time range is invalid");
+      const table = body.subject_type === "residential_unit" ? "units" : "commercial_units";
+      const subject = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=? AND community_id=?`).bind(body.subject_id, communityId).first();
+      if (!subject) return fail("Lease subject not found in this community", 404);
+      if (body.lessee_user_id) {
+        const lessee = await env.DB.prepare(`SELECT id FROM users WHERE id=? AND community_id=?`).bind(body.lessee_user_id, communityId).first();
+        if (!lessee) return fail("Lessee user not found in this community", 404);
+      }
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO leases (id,community_id,subject_type,subject_id,lessor_name,lessor_type,lessee_name,lessee_user_id,starts_at,ends_at,status,rent_amount,rent_currency,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.subject_type, body.subject_id, body.lessor_name, body.lessor_type || "community_owner", body.lessee_name, body.lessee_user_id || null, body.starts_at, body.ends_at || null, body.status || "active", body.rent_amount ?? null, body.rent_currency || "EGP", new Date().toISOString()).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "lease.create", "lease", id, JSON.stringify({subject_type:body.subject_type,subject_id:body.subject_id}), new Date().toISOString()).run();
+      return json({ id, status: body.status || "active" }, 201);
+    }
     if (request.method === "GET" && action === "commercial-units") {
       if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
       const result = await env.DB.prepare(`SELECT id,code,tenant_name,category,status,lease_start,lease_end FROM commercial_units WHERE community_id=? ORDER BY code`).bind(communityId).all();

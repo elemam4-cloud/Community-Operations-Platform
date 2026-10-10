@@ -32,13 +32,16 @@ assert.equal((await response.json()).data.length, 3);
 
 response = await api.fetch(request('/api/demo-community/dashboard', { headers: headers('user-admin') }), env);
 assert.equal(response.status, 200);
-const dashboard = (await response.json()).data.metrics;
+const initialDashboard = (await response.json()).data;
+assert.equal(initialDashboard.operational_state, 'online');
+assert.equal(initialDashboard.last_successful_sync_at, '2026-10-09T08:00:00Z');
+const dashboard = initialDashboard.metrics;
 assert.equal(dashboard.units, 3);
 assert.equal(dashboard.users, 4);
 assert.equal(dashboard.vehicles, 1);
 
-sqlite.prepare("INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES (?,?,?)").run('demo-community', 'operational_state', 'manual_fallback');
-sqlite.prepare("INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES (?,?,?)").run('demo-community', 'last_successful_sync_at', '2026-10-10T08:00:00Z');
+sqlite.prepare("UPDATE community_settings SET setting_value=? WHERE community_id=? AND setting_key=?").run('manual_fallback', 'demo-community', 'operational_state');
+sqlite.prepare("UPDATE community_settings SET setting_value=? WHERE community_id=? AND setting_key=?").run('2026-10-10T08:00:00Z', 'demo-community', 'last_successful_sync_at');
 response = await api.fetch(request('/api/demo-community/dashboard', { headers: headers('user-admin') }), env);
 const emergencyDashboard = (await response.json()).data;
 assert.equal(emergencyDashboard.operational_state, 'manual_fallback');

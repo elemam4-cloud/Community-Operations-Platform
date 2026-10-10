@@ -246,6 +246,24 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "setting.update", "community_setting", body.setting_key, JSON.stringify({value:body.setting_value}), new Date().toISOString()).run();
       return json({ setting_key: body.setting_key, setting_value: body.setting_value });
     }
+    if (request.method === "GET" && action === "commercial-units") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT id,code,tenant_name,category,status,lease_start,lease_end FROM commercial_units WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "commercial-units") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.code || !body?.tenant_name) return fail("Commercial unit code and tenant are required");
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO commercial_units (id,community_id,code,tenant_name,category,status,lease_start,lease_end) VALUES (?,?,?,?,?,?,?,?)`).bind(id, communityId, body.code, body.tenant_name, body.category || null, body.status || "active", body.lease_start || null, body.lease_end || null).run();
+      return json({ id, status: body.status || "active" }, 201);
+    }
+    if (request.method === "GET" && action === "loading-slots") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT id,code,zone,booking_mode,status FROM loading_slots WHERE community_id=? ORDER BY code`).bind(communityId).all();
+      return json(result.results);
+    }
     return fail("Not found", 404);
   }
 };

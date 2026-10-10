@@ -5,6 +5,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE communities (id TEXT PRIMARY KEY, name TEXT NOT NULL, timezone TEXT NOT NULL DEFAULT 'Africa/Cairo', default_language TEXT NOT NULL DEFAULT 'ar', created_at TEXT NOT NULL);
 CREATE TABLE community_policies (community_id TEXT NOT NULL REFERENCES communities(id), policy_key TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(community_id, policy_key));
+CREATE TABLE community_settings (community_id TEXT NOT NULL REFERENCES communities(id), setting_key TEXT NOT NULL, setting_value TEXT NOT NULL, PRIMARY KEY(community_id, setting_key));
 CREATE TABLE users (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), full_name TEXT NOT NULL, phone TEXT, email TEXT, status TEXT NOT NULL DEFAULT 'active', created_at TEXT NOT NULL);
 CREATE TABLE user_roles (user_id TEXT NOT NULL REFERENCES users(id), role TEXT NOT NULL, PRIMARY KEY(user_id, role));
 CREATE TABLE buildings (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), name TEXT NOT NULL, created_at TEXT NOT NULL);

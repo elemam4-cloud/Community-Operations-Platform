@@ -63,6 +63,16 @@ export default {
       const result = await env.DB.prepare(`SELECT id,title,body,audience,published_at,created_at FROM announcements WHERE community_id=? AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 100`).bind(communityId).all();
       return json(result.results);
     }
+    if (request.method === "POST" && action === "vehicles") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.plate_number) return fail("Plate number is required");
+      const ownerId = userRole === "resident" ? user.id : (body.primary_user_id || user.id);
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO vehicles (id,community_id,primary_user_id,plate_number,access_tag,status) VALUES (?,?,?,?,?,?)`).bind(id, communityId, ownerId, body.plate_number.trim(), body.access_tag || null, "active").run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "vehicle.create", "vehicle", id, new Date().toISOString()).run();
+      return json({ id, status: "active" }, 201);
+    }
     if (request.method === "POST" && action === "parking-assignments") {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);

@@ -39,6 +39,7 @@ const dashboard = initialDashboard.metrics;
 assert.equal(dashboard.units, 3);
 assert.equal(dashboard.users, 4);
 assert.equal(dashboard.vehicles, 1);
+assert.equal(dashboard.unknown_parking, 1);
 
 sqlite.prepare("UPDATE community_settings SET setting_value=? WHERE community_id=? AND setting_key=?").run('manual_fallback', 'demo-community', 'operational_state');
 sqlite.prepare("UPDATE community_settings SET setting_value=? WHERE community_id=? AND setting_key=?").run('2026-10-10T08:00:00Z', 'demo-community', 'last_successful_sync_at');

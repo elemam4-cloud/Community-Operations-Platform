@@ -5,7 +5,7 @@ const schema = fs.readFileSync(new URL("./schema.sql", import.meta.url), "utf8")
 const seed = fs.readFileSync(new URL("./seed.sql", import.meta.url), "utf8");
 const requiredTables = [
   "communities", "community_policies", "community_settings", "community_modules", "commercial_units", "leases", "lease_payments", "loading_slots", "loading_bookings", "users", "user_roles", "units", "unit_memberships",
-  "vehicles", "parking_spaces", "permits", "gate_events",
+  "vehicles", "parking_spaces", "permits", "visits", "gate_events",
   "maintenance_tickets", "ticket_history", "announcements",
   "notifications", "notification_preferences", "unit_mail_items", "audit_events"
 ];

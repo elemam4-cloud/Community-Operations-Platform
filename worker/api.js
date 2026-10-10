@@ -209,6 +209,20 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "policy.update", "community_policy", body.policy_key, JSON.stringify({enabled:body.enabled}), new Date().toISOString()).run();
       return json({ policy_key: body.policy_key, enabled: body.enabled });
     }
+    if (request.method === "GET" && action === "settings") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT setting_key,setting_value FROM community_settings WHERE community_id=? ORDER BY setting_key`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "PATCH" && action === "settings") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      const allowedModes = ["qr_only", "tag_only", "qr_or_tag", "anpr_only", "hybrid"];
+      if (body?.setting_key !== "access_verification_mode" || !allowedModes.includes(body.setting_value)) return fail("Invalid access verification mode");
+      await env.DB.prepare(`INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES (?,?,?) ON CONFLICT(community_id,setting_key) DO UPDATE SET setting_value=excluded.setting_value`).bind(communityId, body.setting_key, body.setting_value).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "setting.update", "community_setting", body.setting_key, JSON.stringify({value:body.setting_value}), new Date().toISOString()).run();
+      return json({ setting_key: body.setting_key, setting_value: body.setting_value });
+    }
     return fail("Not found", 404);
   }
 };

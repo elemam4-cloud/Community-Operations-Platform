@@ -28,6 +28,8 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `PATCH /api/{community_id}/notifications` — mark a notification read; only its owner can do so.
 - `GET /api/{community_id}/policies` — operations/admin view policy switches.
 - `PATCH /api/{community_id}/policies` — operations/admin enable or disable an approved policy.
+- `GET /api/{community_id}/settings` — operations/admin view multi-mode settings.
+- `PATCH /api/{community_id}/settings` — operations/admin select an approved access verification mode.
 
 ## Safety rules
 

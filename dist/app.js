@@ -1,5 +1,25 @@
 const storeKey='community-operations-demo-v2';
 const state=JSON.parse(localStorage.getItem(storeKey)||'{"records":[]}');
+const apiConfig={base:(window.COMMUNITY_API_BASE||'').replace(/\/$/,''),community:window.COMMUNITY_ID||'demo-community'};
+async function apiRequest(path,options={}){
+  if(!apiConfig.base) throw new Error('API base is not configured');
+  const res=await fetch(`${apiConfig.base}/api/${apiConfig.community}/${path}`,{...options,headers:{'content-type':'application/json',...(options.headers||{})}});
+  const body=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(body.error||`Request failed (${res.status})`);
+  return body.data;
+}
+window.CommunityAPI={
+  config:apiConfig,
+  getUnits:()=>apiRequest('units'),
+  getVehicles:()=>apiRequest('vehicles'),
+  getParking:()=>apiRequest('parking'),
+  getTickets:()=>apiRequest('maintenance-tickets'),
+  getAnnouncements:()=>apiRequest('announcements'),
+  getNotifications:()=>apiRequest('notifications'),
+  createTicket:body=>apiRequest('maintenance-tickets',{method:'POST',body:JSON.stringify(body)}),
+  createPermit:body=>apiRequest('permits',{method:'POST',body:JSON.stringify(body)}),
+  publishAnnouncement:body=>apiRequest('announcements',{method:'POST',body:JSON.stringify(body)})
+};
 let currentType='general';
 const $=s=>document.querySelector(s);
 function render(){document.querySelectorAll('[data-list]').forEach(list=>{const rows=state.records.filter(r=>r.type===list.dataset.list);list.innerHTML=rows.length?rows.map(r=>`<div class="record"><b>${r.name}</b><div class="muted">${r.place||'—'} · ${new Date(r.createdAt).toLocaleString('ar-EG')}</div></div>`).join(''):'<div class="muted">لا توجد سجلات مضافة بعد.</div>'});$('#recordCount').textContent=state.records.length}

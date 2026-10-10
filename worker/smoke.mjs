@@ -5,7 +5,7 @@ class FakeDB {
   constructor(){this.calls=[];}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available'}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};
@@ -44,6 +44,8 @@ res=await api.fetch(req('/api/demo-community/notifications',{method:'PATCH',head
 assert.equal(res.status,200,'resident can mark notification read');
 res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);
 assert.equal(res.status,200,'security can read parking');
+res=await api.fetch(req('/api/demo-community/parking-assignments',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({parking_space_id:'space-demo',unit_id:'unit-demo'})}),env);
+assert.equal(res.status,201,'admin can assign a valid parking space');
 res=await api.fetch(req('/api/demo-community/vehicles',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-ahmed'},body:JSON.stringify({plate_number:'ABC-123',access_tag:'TAG-1'})}),env);
 assert.equal(res.status,201,'resident can register own vehicle');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO vehicles')),'vehicle insert was executed');

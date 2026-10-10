@@ -13,6 +13,7 @@ for (const table of requiredTables) {
   assert.match(schema, new RegExp(`CREATE TABLE ${table}\\s`, "i"), `missing table: ${table}`);
 }
 assert.match(schema, /PRAGMA foreign_keys = ON/i);
+assert.match(schema, /community_type TEXT NOT NULL/i);
 assert.match(seed, /INSERT INTO communities/i);
 assert.match(seed, /INSERT INTO users/i);
 assert.match(seed, /INSERT INTO user_roles/i);

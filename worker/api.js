@@ -122,6 +122,9 @@ export default {
       if (!body?.ticket_id || !body?.status) return fail("Ticket and status are required");
       const allowedStatuses = ["open", "in_progress", "scheduled", "resolved", "closed"];
       if (!allowedStatuses.includes(body.status)) return fail("Invalid ticket status");
+      const ticket = await env.DB.prepare(`SELECT id,requester_id FROM maintenance_tickets WHERE id=? AND community_id=?`).bind(body.ticket_id, communityId).first();
+      if (!ticket) return fail("Ticket not found", 404);
+      if (userRole === "resident" && ticket.requester_id !== user.id) return fail("Residents may update only their own tickets", 403);
       const now = new Date().toISOString();
       await env.DB.prepare(`UPDATE maintenance_tickets SET status=?,closed_at=? WHERE id=? AND community_id=?`).bind(body.status, body.status === "closed" ? now : null, body.ticket_id, communityId).run();
       await env.DB.prepare(`INSERT INTO ticket_history (id,ticket_id,changed_by,to_status,note,changed_at) VALUES (?,?,?,?,?,?)`).bind(crypto.randomUUID(), body.ticket_id, user.id, body.status, body.note || null, now).run();

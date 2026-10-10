@@ -150,6 +150,13 @@ export default {
       const result = await env.DB.prepare(`SELECT id,channel,delivery_status,read_at,created_at FROM notifications WHERE community_id=? AND user_id=? ORDER BY created_at DESC LIMIT 100`).bind(communityId, user.id).all();
       return json(result.results);
     }
+    if (request.method === "PATCH" && action === "notifications") {
+      const body = await request.json().catch(() => null);
+      if (!body?.notification_id) return fail("Notification is required");
+      const now = new Date().toISOString();
+      await env.DB.prepare(`UPDATE notifications SET read_at=? WHERE id=? AND community_id=? AND user_id=?`).bind(now, body.notification_id, communityId, user.id).run();
+      return json({ id: body.notification_id, read_at: now });
+    }
     return fail("Not found", 404);
   }
 };

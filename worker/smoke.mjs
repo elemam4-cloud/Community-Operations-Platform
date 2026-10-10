@@ -40,6 +40,8 @@ res=await api.fetch(req('/api/demo-community/announcements',{headers:{'oai-authe
 assert.equal(res.status,200,'resident can read announcements');
 res=await api.fetch(req('/api/demo-community/notifications',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
 assert.equal(res.status,200,'resident can read notifications');
+res=await api.fetch(req('/api/demo-community/notifications',{method:'PATCH',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-ahmed'},body:JSON.stringify({notification_id:'notification-demo'})}),env);
+assert.equal(res.status,200,'resident can mark notification read');
 res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);
 assert.equal(res.status,200,'security can read parking');
 res=await api.fetch(req('/api/demo-community/gate-check',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({permit_id:'missing-permit'})}),env);

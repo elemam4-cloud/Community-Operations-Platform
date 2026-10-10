@@ -23,7 +23,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `POST /api/{community_id}/permits` — issue a time-bounded permit.
 - `POST /api/{community_id}/permit-revoke` — revoke an active permit and record the reason.
 - `GET /api/{community_id}/visits` — operational visit list; residents see visits for their units.
-- `POST /api/{community_id}/visits` — security/operations register an expected visitor, domestic staff member, delivery, or contractor.
+- `POST /api/{community_id}/visits` — security/operations register an expected visitor, domestic staff member, delivery, or contractor; linked permits must be active and within their time window.
 - `PATCH /api/{community_id}/visits` — security/operations record expected, checked-in, checked-out, or cancelled status.
 - `POST /api/{community_id}/gate-check` — allow only when the permit is active, started, and not expired.
 - `POST /api/{community_id}/gate-events` — append a gate decision event.

@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-- Platform release: `4.20`
+- Platform release: `4.22`
 - Schema baseline: `portable-sqlite-d1`
 - Canonical schema: `database/schema.sql`
 - Demo-only seed: `database/seed.sql`
@@ -16,7 +16,8 @@
 3. Apply `seed.sql` only in a demo environment.
 4. Configure the API adapter with the database binding or connection used by the target environment.
 5. Run both verification commands.
-6. Confirm that authentication, role scoping, module states, audit events, notifications, leases, and unit mailboxes behave as expected.
+6. Run `node worker/reminders.smoke.mjs`.
+7. Confirm that authentication, role scoping, module states, audit events, notifications, leases, and unit mailboxes behave as expected.
 
 The release archive contains the source required to reconstruct the application. Sites is a deployment surface, not the canonical source or backup location.
 

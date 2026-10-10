@@ -5,7 +5,7 @@ class FakeDB {
   constructor(){this.calls=[];}
   prepare(sql){
     const self=this;
-    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available'}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
+    return {bind(...args){return {first:async()=>sql.includes('user_roles')?{role:args[0]==='user-admin'?'admin':args[0]==='user-security'?'security':'resident'}:sql.includes('maintenance_tickets')?{id:args[0],requester_id:'user-admin'}:sql.includes('parking_spaces')?{id:args[0],status:'available',parking_type:'shared',assigned_unit_id:null}:sql.includes('FROM units')?{id:args[0]}:null,all:async()=>({results:sql.includes('FROM users')?[{id:'user-admin'},{id:'user-ahmed'}]:[]}),run:async()=>{self.calls.push({sql,args});return {success:true}}};}};
   }
 }
 const env={DB:new FakeDB()};

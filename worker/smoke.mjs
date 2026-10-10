@@ -62,5 +62,7 @@ res=await api.fetch(req('/api/demo-community/gate-check',{method:'POST',headers:
 assert.equal(res.status,200,'gate check remains safe for unknown permits');
 res=await api.fetch(req('/api/demo-community/gate-events',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({gate_name:'North Gate',direction:'entry',decision:'denied'})}),env);
 assert.equal(res.status,201,'security can append a gate event');
+res=await api.fetch(req('/api/demo-community/gate-events',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({gate_name:'North Gate',direction:'sideways',decision:'denied'})}),env);
+assert.equal(res.status,400,'invalid gate direction is rejected');
 console.log('worker smoke tests: OK');
 

@@ -6,13 +6,28 @@ Supported first slice:
 
 - `GET /api/{community_id}/units`
 - `GET /api/{community_id}/vehicles`
+- `GET /api/{community_id}/parking`
+- `POST /api/{community_id}/parking-assignments`
+- `POST /api/{community_id}/parking-claim`
+- `POST /api/{community_id}/parking-occupancy`
 - `POST /api/{community_id}/permits`
+- `POST /api/{community_id}/gate-check`
+- `POST /api/{community_id}/gate-events`
 - `GET /api/{community_id}/maintenance-tickets`
 - `POST /api/{community_id}/maintenance-tickets`
 - `PATCH /api/{community_id}/maintenance-tickets`
 - `GET /api/{community_id}/announcements`
 - `POST /api/{community_id}/announcements`
 - `POST /api/{community_id}/permit-revoke`
+- `GET/PATCH /api/{community_id}/notifications`
+- `GET/PATCH /api/{community_id}/notification-preferences`
+- `GET/PATCH /api/{community_id}/modules`
+- `GET/POST /api/{community_id}/leases`
+- `GET/POST/PATCH /api/{community_id}/lease-payments`
+- `GET/POST/PATCH /api/{community_id}/unit-mailbox`
+- `GET/POST /api/{community_id}/commercial-units`
+- `GET /api/{community_id}/loading-slots`
+- `POST /api/{community_id}/loading-bookings`
 
 The worker deliberately returns a clear `503` when the Site has no database binding. This prevents accidental fallback to an unprotected or in-memory production store.
 

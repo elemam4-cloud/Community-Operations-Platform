@@ -1,7 +1,7 @@
-# Community Operations Platform — Product Blueprint v0.3
+# Community Operations Platform — Product Blueprint v0.4
 
 ## Product principle
-One extensible operating platform for residential communities. Every module is optional per community, and every record is scoped to a community and governed by role-based access.
+One extensible operating platform for residential communities, commercial centers, mixed-use sites, and managed campuses. Every module is optional per site, and every record is scoped to a community and governed by role-based access.
 
 ## Core roles
 - Community owner/admin: configuration, users, reports, policies.
@@ -16,8 +16,10 @@ One extensible operating platform for residential communities. Every module is o
 3. Permits for residents, visitors, domestic staff, maintenance and deliveries.
 4. Maintenance tickets with priority, assignment, SLA, attachments and rating.
 5. Announcements and notification delivery preferences.
-6. Facilities, activities, bookings and internal service directory.
-7. Reports, audit log, settings and bilingual content.
+6. Information center, audience-targeted notices, scheduled events, and unit digital mailboxes.
+7. Lease contracts, installment schedules, lightweight claims/receipts, and overdue reminders.
+8. Facilities, activities, bookings and internal service directory.
+9. Reports, audit log, settings and bilingual content.
 
 ## Optional commercial module
 
@@ -25,6 +27,14 @@ One extensible operating platform for residential communities. Every module is o
 - Loading zones and reservable delivery slots.
 - Supplier, contractor and vehicle permits can reuse the core permit and gate model.
 - The module remains disabled for communities that do not need it.
+
+## Integrated operating model
+
+- A unit is the common anchor for residents, tenants, vehicles, parking, leases, maintenance, permits, messages, and mailbox items.
+- A commercial unit follows the same operating model while adding tenant, category, loading, and lease capabilities.
+- The information center is the common communication hub; announcements can target all users, residents, staff, security, or providers and can be delivered through selected channels.
+- Lease tracking is operational, not general ledger accounting: the platform records contract metadata, due installments, payment status, receipts/references, and reminders. Full accounting, tax, invoicing, and payment gateways remain optional adapters/modules.
+- Every feature has a configurable enforcement level where real communities differ: strict, relaxed, manual fallback, or disabled.
 
 ## Non-negotiable behavior
 - Every access decision is auditable.
@@ -34,7 +44,7 @@ One extensible operating platform for residential communities. Every module is o
 - New modules must not change existing data or permissions.
 
 ## First production slice
-Community setup → unit/resident record → vehicle/parking record → visitor permit → security check-in/out → maintenance ticket → resident notification.
+Community setup → unit/resident record → vehicle/parking record → visitor permit → security check-in/out → maintenance ticket → information-center notification → unit mailbox.
 
 ## Future integrations
 RFID/UHF, ANPR cameras, barriers, SMS, WhatsApp Business, payment providers, accounting systems and mobile push notifications. Integrations must be adapter-based so the platform is not tied to one vendor.

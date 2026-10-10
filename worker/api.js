@@ -78,8 +78,9 @@ export default {
       if (!can(userRole, "permit") && userRole !== "security") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.permit_id) return fail("Permit is required");
-      const permit = await env.DB.prepare(`SELECT id,status,expires_at FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
-      const allowed = Boolean(permit && permit.status === "active" && new Date(permit.expires_at).getTime() > Date.now());
+      const permit = await env.DB.prepare(`SELECT id,status,starts_at,expires_at FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
+      const now = Date.now();
+      const allowed = Boolean(permit && permit.status === "active" && new Date(permit.starts_at).getTime() <= now && new Date(permit.expires_at).getTime() > now);
       return json({ allowed, reason: allowed ? "active_permit" : "missing_or_expired_permit" });
     }
     if (request.method === "POST" && action === "gate-events") {

@@ -68,7 +68,7 @@ export default {
     }
     if (request.method === "GET" && action === "announcements") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,title,body,audience,published_at,created_at FROM announcements WHERE community_id=? AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 100`).bind(communityId).all();
+      const result = await env.DB.prepare(`SELECT id,title,body,content_type,audience,delivery_channels,scheduled_at,published_at,created_at FROM announcements WHERE community_id=? AND published_at IS NOT NULL AND (scheduled_at IS NULL OR scheduled_at<=datetime('now')) ORDER BY published_at DESC LIMIT 100`).bind(communityId).all();
       return json(result.results);
     }
     if (request.method === "POST" && action === "vehicles") {
@@ -197,12 +197,21 @@ export default {
       if (!can(userRole, "maintenance") && userRole !== "operations" && userRole !== "admin") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.title || !body?.body) return fail("Announcement title and body are required");
+      const contentTypes = ["announcement", "alert", "event", "maintenance"];
+      const audiences = ["all", "residents", "staff", "security", "providers"];
+      const channels = ["in_app", "email", "sms", "whatsapp"];
+      if (body.content_type && !contentTypes.includes(body.content_type)) return fail("Invalid information content type");
+      if (body.audience && !audiences.includes(body.audience)) return fail("Invalid information audience");
+      const selectedChannels = Array.isArray(body.delivery_channels) && body.delivery_channels.length ? body.delivery_channels : ["in_app"];
+      if (selectedChannels.some(channel => !channels.includes(channel))) return fail("Invalid delivery channel");
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
-      await env.DB.prepare(`INSERT INTO announcements (id,community_id,author_id,title,body,audience,published_at,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.title, body.body, body.audience || "all", now, now).run();
-      const recipients = await env.DB.prepare(`SELECT id FROM users WHERE community_id=? AND status='active'`).bind(communityId).all();
+      const audience = body.audience || "all";
+      const audienceWhere = audience === "all" ? "" : audience === "residents" ? " AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id=users.id AND ur.role='resident')" : audience === "staff" ? " AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id=users.id AND ur.role IN ('admin','operations'))" : audience === "security" ? " AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id=users.id AND ur.role='security')" : " AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id=users.id AND ur.role='provider')";
+      await env.DB.prepare(`INSERT INTO announcements (id,community_id,author_id,title,body,content_type,audience,delivery_channels,scheduled_at,published_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.title, body.body, body.content_type || "announcement", audience, selectedChannels.join(","), body.scheduled_at || null, body.scheduled_at ? null : now, now).run();
+      const recipients = await env.DB.prepare(`SELECT id FROM users WHERE community_id=? AND status='active'${audienceWhere}`).bind(communityId).all();
       for (const recipient of recipients.results || []) {
-        await env.DB.prepare(`INSERT INTO notifications (id,community_id,user_id,announcement_id,channel,delivery_status,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, recipient.id, id, "in_app", "pending", now).run();
+        for (const channel of selectedChannels) await env.DB.prepare(`INSERT INTO notifications (id,community_id,user_id,announcement_id,channel,delivery_status,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, recipient.id, id, channel, "pending", now).run();
       }
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "announcement.publish", "announcement", id, now).run();
       return json({ id, published_at: now }, 201);
@@ -281,7 +290,7 @@ export default {
       if (!["admin", "operations", "security", "resident"].includes(userRole)) return fail("Forbidden", 403);
       const residentScope = userRole === "resident" ? " AND l.lessee_user_id=?" : "";
       const params = userRole === "resident" ? [communityId, user.id] : [communityId];
-      const result = await env.DB.prepare(`SELECT p.id,p.lease_id,p.due_date,p.amount,p.currency,p.status,p.paid_at,p.payment_method,p.payment_reference,p.reminder_sent_at FROM lease_payments p JOIN leases l ON l.id=p.lease_id WHERE p.community_id=?${residentScope} ORDER BY p.due_date`).bind(...params).all();
+      const result = await env.DB.prepare(`SELECT p.id,p.lease_id,p.due_date,p.amount,p.currency,CASE WHEN p.status='due' AND p.due_date < date('now') THEN 'late' ELSE p.status END AS status,p.paid_at,p.payment_method,p.payment_reference,p.reminder_sent_at FROM lease_payments p JOIN leases l ON l.id=p.lease_id WHERE p.community_id=?${residentScope} ORDER BY p.due_date`).bind(...params).all();
       return json(result.results);
     }
     if (request.method === "POST" && action === "lease-payments") {

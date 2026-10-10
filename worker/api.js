@@ -54,6 +54,23 @@ export default {
     };
     const moduleKey = moduleByAction[action];
     if (moduleKey && await moduleStatus(env.DB, communityId, moduleKey) === "disabled") return fail("This module is disabled for the community", 404);
+    if (request.method === "GET" && action === "dashboard") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const queries = [
+        ["units", `SELECT count(*) AS count FROM units WHERE community_id=?`],
+        ["users", `SELECT count(*) AS count FROM users WHERE community_id=? AND status='active'`],
+        ["vehicles", `SELECT count(*) AS count FROM vehicles WHERE community_id=? AND status='active'`],
+        ["parking", `SELECT count(*) AS count FROM parking_spaces WHERE community_id=?`],
+        ["available_parking", `SELECT count(*) AS count FROM parking_spaces WHERE community_id=? AND occupancy_state='vacant'`],
+        ["active_permits", `SELECT count(*) AS count FROM permits WHERE community_id=? AND status='active'`],
+        ["open_tickets", `SELECT count(*) AS count FROM maintenance_tickets WHERE community_id=? AND status NOT IN ('resolved','closed')`],
+        ["expected_visits", `SELECT count(*) AS count FROM visits WHERE community_id=? AND status='expected'`],
+        ["unread_notifications", `SELECT count(*) AS count FROM notifications WHERE community_id=? AND user_id=? AND read_at IS NULL`]
+      ];
+      const data = {};
+      for (const [key, sql] of queries) data[key] = Number((await env.DB.prepare(sql).bind(...(key === "unread_notifications" ? [communityId, user.id] : [communityId])).first())?.count || 0);
+      return json({ community_id: communityId, generated_at: new Date().toISOString(), metrics: data });
+    }
     if (request.method === "GET" && action === "units") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
       const result = await env.DB.prepare(`SELECT id,code,status,building_id FROM units WHERE community_id=? ORDER BY code`).bind(communityId).all();

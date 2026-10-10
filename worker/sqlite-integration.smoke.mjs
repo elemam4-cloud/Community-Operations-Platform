@@ -37,6 +37,13 @@ assert.equal(dashboard.units, 3);
 assert.equal(dashboard.users, 4);
 assert.equal(dashboard.vehicles, 1);
 
+sqlite.prepare("INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES (?,?,?)").run('demo-community', 'operational_state', 'manual_fallback');
+sqlite.prepare("INSERT INTO community_settings (community_id,setting_key,setting_value) VALUES (?,?,?)").run('demo-community', 'last_successful_sync_at', '2026-10-10T08:00:00Z');
+response = await api.fetch(request('/api/demo-community/dashboard', { headers: headers('user-admin') }), env);
+const emergencyDashboard = (await response.json()).data;
+assert.equal(emergencyDashboard.operational_state, 'manual_fallback');
+assert.equal(emergencyDashboard.last_successful_sync_at, '2026-10-10T08:00:00Z');
+
 response = await api.fetch(request('/api/demo-community/visits', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ visitor_name: 'Integration Visitor', visitor_type: 'visitor', host_unit_id: 'unit-a204' }) }), env);
 assert.equal(response.status, 201);
 const visitId = (await response.json()).data.id;

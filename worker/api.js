@@ -51,6 +51,16 @@ export default {
       const result = await env.DB.prepare(`SELECT id,code,zone,assigned_unit_id,status FROM parking_spaces WHERE community_id=? ORDER BY code`).bind(communityId).all();
       return json(result.results);
     }
+    if (request.method === "GET" && action === "maintenance-tickets") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT id,unit_id,requester_id,assigned_to,title,description,priority,status,created_at,closed_at FROM maintenance_tickets WHERE community_id=? ORDER BY created_at DESC LIMIT 100`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "GET" && action === "announcements") {
+      if (!can(userRole, "read")) return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT id,title,body,audience,published_at,created_at FROM announcements WHERE community_id=? AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 100`).bind(communityId).all();
+      return json(result.results);
+    }
     if (request.method === "POST" && action === "parking-assignments") {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);

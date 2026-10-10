@@ -36,6 +36,9 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `POST /api/{community_id}/commercial-units` — operations/admin create a tenant space.
 - `GET /api/{community_id}/leases` — operations/security view all leases; residents see only leases linked to their user.
 - `POST /api/{community_id}/leases` — operations/admin create a lease for a residential or commercial unit, with community or external lessor.
+- `GET /api/{community_id}/lease-payments` — view due, paid, late, and waived rent installments; residents see only their linked leases.
+- `POST /api/{community_id}/lease-payments` — operations/admin add a monthly or annual installment record.
+- `PATCH /api/{community_id}/lease-payments` — operations/admin mark an installment paid, due, late, or waived.
 - `GET /api/{community_id}/loading-slots` — operations/security view loading areas.
 - `POST /api/{community_id}/loading-bookings` — operations/security create a time-bounded supplier booking.
 
@@ -55,4 +58,6 @@ Occupancy is separate from assignment. A sensor, camera/ANPR adapter, or gate ev
 The controls above are configurable per community through `community_policies`. Supported keys are `permit_time_window`, `resident_ownership_scope`, `gate_value_validation`, `resident_vehicle_scope`, and `parking_unit_validation`. A missing key defaults to enabled; administrators may disable selected controls when the community's operating policy calls for a less restrictive mode.
 
 Feature modes that have more than two states use `community_settings`. For example, `access_verification_mode` may be `qr_only`, `tag_only`, `qr_or_tag`, `anpr_only`, or `hybrid`. The demo defaults to `qr_or_tag`; ANPR/camera integration can be added without forcing every community to install cameras.
+
+Lease payments are lightweight operational records: amount, due date, status, and optional payment reference. Reminder delivery can use email, SMS, or WhatsApp adapters; the platform stores reminder timing without forcing one provider.
 

@@ -48,7 +48,7 @@ export default {
     const action = parts[2];
     const moduleByAction = {
       units: "core_identity", vehicles: "vehicles_parking", parking: "vehicles_parking", "parking-assignments": "vehicles_parking", "parking-claim": "vehicles_parking", "parking-occupancy": "vehicles_parking",
-      permits: "permits_visitors", "permit-revoke": "permits_visitors", "gate-check": "access_security", "gate-events": "access_security",
+      permits: "permits_visitors", "permit-revoke": "permits_visitors", visits: "permits_visitors", "gate-check": "access_security", "gate-events": "access_security",
       "maintenance-tickets": "maintenance", announcements: "information_center", notifications: "information_center", "unit-mailbox": "unit_mailbox",
       leases: "leases", "lease-payments": "lease_payments", "notification-preferences": "information_center", "commercial-units": "commercial_operations", "loading-slots": "commercial_operations", "loading-bookings": "commercial_operations"
     };
@@ -181,6 +181,36 @@ export default {
       await env.DB.prepare(`UPDATE permits SET status='revoked' WHERE id=? AND community_id=? AND status='active'`).bind(body.permit_id, communityId).run();
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "permit.revoke", "permit", body.permit_id, JSON.stringify({reason:body.reason||null}), new Date().toISOString()).run();
       return json({ id: body.permit_id, status: "revoked" });
+    }
+    if (request.method === "GET" && action === "visits") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security" && userRole !== "resident") return fail("Forbidden", 403);
+      const residentScope = userRole === "resident" ? " AND v.host_unit_id IN (SELECT unit_id FROM unit_memberships WHERE user_id=?)" : "";
+      const params = userRole === "resident" ? [communityId, user.id] : [communityId];
+      const result = await env.DB.prepare(`SELECT v.id,v.permit_id,v.host_unit_id,v.visitor_name,v.visitor_type,v.vehicle_plate,v.status,v.checked_in_at,v.checked_out_at,v.created_at FROM visits v WHERE v.community_id=?${residentScope} ORDER BY v.created_at DESC LIMIT 100`).bind(...params).all();
+      return json(result.results);
+    }
+    if (request.method === "POST" && action === "visits") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.visitor_name || !body?.host_unit_id) return fail("Visitor name and host unit are required");
+      if (body.visitor_type && !["visitor", "domestic_staff", "maintenance", "delivery", "contractor"].includes(body.visitor_type)) return fail("Invalid visitor type");
+      const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.host_unit_id, communityId).first();
+      if (!unit) return fail("Host unit not found", 404);
+      if (body.permit_id) {
+        const permit = await env.DB.prepare(`SELECT id,status,unit_id FROM permits WHERE id=? AND community_id=?`).bind(body.permit_id, communityId).first();
+        if (!permit || permit.status !== "active" || (permit.unit_id && permit.unit_id !== body.host_unit_id)) return fail("Permit is invalid for this visit", 403);
+      }
+      const id = crypto.randomUUID();
+      await env.DB.prepare(`INSERT INTO visits (id,community_id,permit_id,host_unit_id,visitor_name,visitor_type,vehicle_plate,status,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(id, communityId, body.permit_id || null, body.host_unit_id, body.visitor_name, body.visitor_type || "visitor", body.vehicle_plate || null, "expected", user.id, new Date().toISOString()).run();
+      return json({ id, status: "expected" }, 201);
+    }
+    if (request.method === "PATCH" && action === "visits") {
+      if (userRole !== "admin" && userRole !== "operations" && userRole !== "security") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.visit_id || !["expected", "checked_in", "checked_out", "cancelled"].includes(body.status)) return fail("Invalid visit update");
+      const now = new Date().toISOString();
+      await env.DB.prepare(`UPDATE visits SET status=?,checked_in_at=CASE WHEN ?='checked_in' THEN COALESCE(checked_in_at,?) ELSE checked_in_at END,checked_out_at=CASE WHEN ?='checked_out' THEN ? ELSE checked_out_at END WHERE id=? AND community_id=?`).bind(body.status, body.status, now, body.status, now, body.visit_id, communityId).run();
+      return json({ id: body.visit_id, status: body.status });
     }
     if (request.method === "POST" && action === "maintenance-tickets") {
       if (!can(userRole, "maintenance")) return fail("Forbidden", 403);

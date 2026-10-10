@@ -24,5 +24,12 @@ res=await api.fetch(req('/api/demo-community/announcements',{method:'POST',heade
 assert.equal(res.status,201,'admin can publish an announcement');
 res=await api.fetch(req('/api/demo-community/notifications',{headers:{'oai-authenticated-user-id':'user-ahmed'}}),env);
 assert.equal(res.status,200,'resident can read notifications');
+res=await api.fetch(req('/api/demo-community/parking',{headers:{'oai-authenticated-user-id':'user-security'}}),env);
+assert.equal(res.status,200,'security can read parking');
+res=await api.fetch(req('/api/demo-community/gate-check',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({permit_id:'missing-permit'})}),env);
+assert.equal(res.status,200,'security can check a permit');
+assert.equal((await res.json()).data.allowed,false,'missing permit is denied');
+res=await api.fetch(req('/api/demo-community/gate-events',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({gate_name:'North Gate',direction:'entry',decision:'denied'})}),env);
+assert.equal(res.status,201,'security can append a gate event');
 console.log('worker smoke tests: OK');
 

@@ -7,6 +7,7 @@ CREATE TABLE communities (id TEXT PRIMARY KEY, name TEXT NOT NULL, community_typ
 CREATE TABLE community_policies (community_id TEXT NOT NULL REFERENCES communities(id), policy_key TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(community_id, policy_key));
 CREATE TABLE community_settings (community_id TEXT NOT NULL REFERENCES communities(id), setting_key TEXT NOT NULL, setting_value TEXT NOT NULL, PRIMARY KEY(community_id, setting_key));
 CREATE TABLE commercial_units (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), code TEXT NOT NULL, tenant_name TEXT NOT NULL, category TEXT, status TEXT NOT NULL DEFAULT 'active', lease_start TEXT, lease_end TEXT, UNIQUE(community_id, code));
+CREATE TABLE leases (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), subject_type TEXT NOT NULL, subject_id TEXT NOT NULL, lessor_name TEXT NOT NULL, lessor_type TEXT NOT NULL DEFAULT 'community_owner', lessee_name TEXT NOT NULL, lessee_user_id TEXT REFERENCES users(id), starts_at TEXT NOT NULL, ends_at TEXT, status TEXT NOT NULL DEFAULT 'active', rent_amount REAL, rent_currency TEXT NOT NULL DEFAULT 'EGP', created_at TEXT NOT NULL);
 CREATE TABLE loading_slots (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), code TEXT NOT NULL, zone TEXT, booking_mode TEXT NOT NULL DEFAULT 'reservation', status TEXT NOT NULL DEFAULT 'active', UNIQUE(community_id, code));
 CREATE TABLE loading_bookings (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), loading_slot_id TEXT NOT NULL REFERENCES loading_slots(id), commercial_unit_id TEXT REFERENCES commercial_units(id), carrier_name TEXT NOT NULL, vehicle_plate TEXT, starts_at TEXT NOT NULL, ends_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'requested', created_by TEXT NOT NULL REFERENCES users(id), created_at TEXT NOT NULL);
 CREATE TABLE users (id TEXT PRIMARY KEY, community_id TEXT NOT NULL REFERENCES communities(id), full_name TEXT NOT NULL, phone TEXT, email TEXT, status TEXT NOT NULL DEFAULT 'active', created_at TEXT NOT NULL);
@@ -29,4 +30,6 @@ CREATE INDEX idx_permits_expiry ON permits(community_id, expires_at, status);
 CREATE INDEX idx_gate_events_time ON gate_events(community_id, captured_at);
 CREATE INDEX idx_tickets_status ON maintenance_tickets(community_id, status, priority);
 CREATE INDEX idx_notifications_user ON notifications(user_id, read_at);
+CREATE INDEX idx_leases_subject ON leases(community_id, subject_type, subject_id, status);
+CREATE INDEX idx_leases_lessee ON leases(community_id, lessee_user_id, status);
 

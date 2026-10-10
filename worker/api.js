@@ -85,9 +85,10 @@ export default {
       if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
       const body = await request.json().catch(() => null);
       if (!body?.parking_space_id || !body?.unit_id) return fail("Parking space and unit are required");
-      const space = await env.DB.prepare(`SELECT id,status FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
+      const space = await env.DB.prepare(`SELECT id,status,parking_type,assigned_unit_id FROM parking_spaces WHERE id=? AND community_id=?`).bind(body.parking_space_id, communityId).first();
       if (!space) return fail("Parking space not found", 404);
       if (space.status === "assigned") return fail("Parking space is already assigned", 409);
+      if (space.parking_type === "private" && space.assigned_unit_id && space.assigned_unit_id !== body.unit_id) return fail("Private parking belongs to another unit", 403);
       if (await policy(env.DB, communityId, "parking_unit_validation")) {
         const unit = await env.DB.prepare(`SELECT id FROM units WHERE id=? AND community_id=?`).bind(body.unit_id, communityId).first();
         if (!unit) return fail("Unit not found", 404);

@@ -53,7 +53,9 @@ export default {
     }
     if (request.method === "GET" && action === "maintenance-tickets") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,unit_id,requester_id,assigned_to,title,description,priority,status,created_at,closed_at FROM maintenance_tickets WHERE community_id=? ORDER BY created_at DESC LIMIT 100`).bind(communityId).all();
+      const residentScope = userRole === "resident" ? " AND requester_id=?" : "";
+      const params = userRole === "resident" ? [communityId, user.id] : [communityId];
+      const result = await env.DB.prepare(`SELECT id,unit_id,requester_id,assigned_to,title,description,priority,status,created_at,closed_at FROM maintenance_tickets WHERE community_id=?${residentScope} ORDER BY created_at DESC LIMIT 100`).bind(...params).all();
       return json(result.results);
     }
     if (request.method === "GET" && action === "announcements") {

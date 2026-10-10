@@ -64,6 +64,20 @@ export default {
       await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "maintenance.create", "maintenance_ticket", id, new Date().toISOString()).run();
       return json({ id, status: "open" }, 201);
     }
+    if (request.method === "POST" && action === "announcements") {
+      if (!can(userRole, "maintenance") && userRole !== "operations" && userRole !== "admin") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      if (!body?.title || !body?.body) return fail("Announcement title and body are required");
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      await env.DB.prepare(`INSERT INTO announcements (id,community_id,author_id,title,body,audience,published_at,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(id, communityId, user.id, body.title, body.body, body.audience || "all", now, now).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,created_at) VALUES (?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "announcement.publish", "announcement", id, now).run();
+      return json({ id, published_at: now }, 201);
+    }
+    if (request.method === "GET" && action === "notifications") {
+      const result = await env.DB.prepare(`SELECT id,channel,delivery_status,read_at,created_at FROM notifications WHERE community_id=? AND user_id=? ORDER BY created_at DESC LIMIT 100`).bind(communityId, user.id).all();
+      return json(result.results);
+    }
     return fail("Not found", 404);
   }
 };

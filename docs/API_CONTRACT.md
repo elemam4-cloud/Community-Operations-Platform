@@ -38,3 +38,5 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 
 The controls above are configurable per community through `community_policies`. Supported keys are `permit_time_window`, `resident_ownership_scope`, `gate_value_validation`, `resident_vehicle_scope`, and `parking_unit_validation`. A missing key defaults to enabled; administrators may disable selected controls when the community's operating policy calls for a less restrictive mode.
 
+Feature modes that have more than two states use `community_settings`. For example, `access_verification_mode` may be `qr_only`, `tag_only`, `qr_or_tag`, `anpr_only`, or `hybrid`. The demo defaults to `qr_or_tag`; ANPR/camera integration can be added without forcing every community to install cameras.
+

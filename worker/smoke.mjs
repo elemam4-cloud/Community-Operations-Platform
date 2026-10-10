@@ -17,6 +17,8 @@ assert.equal(res.status,200,'admin can read units');
 res=await api.fetch(req('/api/demo-community/permits',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_name:'Test visitor',permit_type:'visitor',starts_at:'2026-10-10T08:00:00Z',expires_at:'2026-10-10T18:00:00Z'})}),env);
 assert.equal(res.status,201,'admin can issue a permit');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO permits')),'permit insert was executed');
+res=await api.fetch(req('/api/demo-community/permits',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({subject_name:'Invalid visitor',permit_type:'visitor',starts_at:'2026-10-10T18:00:00Z',expires_at:'2026-10-10T08:00:00Z'})}),env);
+assert.equal(res.status,400,'invalid permit time range is rejected');
 res=await api.fetch(req('/api/demo-community/maintenance-tickets',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-admin'},body:JSON.stringify({title:'Test ticket'})}),env);
 assert.equal(res.status,201,'admin can create a maintenance ticket');
 assert.ok(env.DB.calls.some(x=>x.sql.includes('INSERT INTO audit_events')),'audit event was written');

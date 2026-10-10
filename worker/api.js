@@ -43,7 +43,9 @@ export default {
     }
     if (request.method === "GET" && action === "vehicles") {
       if (!can(userRole, "read")) return fail("Forbidden", 403);
-      const result = await env.DB.prepare(`SELECT id,plate_number,access_tag,status,primary_user_id FROM vehicles WHERE community_id=? ORDER BY plate_number`).bind(communityId).all();
+      const residentScope = userRole === "resident" ? " AND primary_user_id=?" : "";
+      const params = userRole === "resident" ? [communityId, user.id] : [communityId];
+      const result = await env.DB.prepare(`SELECT id,plate_number,access_tag,status,primary_user_id FROM vehicles WHERE community_id=?${residentScope} ORDER BY plate_number`).bind(...params).all();
       return json(result.results);
     }
     if (request.method === "GET" && action === "parking") {

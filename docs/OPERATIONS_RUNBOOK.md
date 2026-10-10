@@ -24,6 +24,7 @@ Arabic companion: `docs/OPERATIONS_RUNBOOK_AR.md`.
 2. Security checks the permit and records entry or exit.
 3. The system validates time, ownership, and policy rules according to the community configuration.
 4. Manual fallback remains available when an external device or network is unavailable.
+5. The system records an actual visit separately from the permit, with expected, checked-in, checked-out, or cancelled status.
 
 ## 4. Parking operations
 

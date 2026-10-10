@@ -195,6 +195,20 @@ export default {
       await env.DB.prepare(`UPDATE notifications SET read_at=? WHERE id=? AND community_id=? AND user_id=?`).bind(now, body.notification_id, communityId, user.id).run();
       return json({ id: body.notification_id, read_at: now });
     }
+    if (request.method === "GET" && action === "policies") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const result = await env.DB.prepare(`SELECT policy_key,enabled FROM community_policies WHERE community_id=? ORDER BY policy_key`).bind(communityId).all();
+      return json(result.results);
+    }
+    if (request.method === "PATCH" && action === "policies") {
+      if (userRole !== "admin" && userRole !== "operations") return fail("Forbidden", 403);
+      const body = await request.json().catch(() => null);
+      const allowedPolicies = ["permit_time_window", "resident_ownership_scope", "gate_value_validation", "resident_vehicle_scope", "parking_unit_validation"];
+      if (!body?.policy_key || !allowedPolicies.includes(body.policy_key) || typeof body.enabled !== "boolean") return fail("Invalid policy update");
+      await env.DB.prepare(`INSERT INTO community_policies (community_id,policy_key,enabled) VALUES (?,?,?) ON CONFLICT(community_id,policy_key) DO UPDATE SET enabled=excluded.enabled`).bind(communityId, body.policy_key, body.enabled ? 1 : 0).run();
+      await env.DB.prepare(`INSERT INTO audit_events (id,community_id,actor_user_id,action,entity_type,entity_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), communityId, user.id, "policy.update", "community_policy", body.policy_key, JSON.stringify({enabled:body.enabled}), new Date().toISOString()).run();
+      return json({ policy_key: body.policy_key, enabled: body.enabled });
+    }
     return fail("Not found", 404);
   }
 };

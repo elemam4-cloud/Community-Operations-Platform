@@ -16,6 +16,8 @@ assert.match(schema, /PRAGMA foreign_keys = ON/i);
 assert.match(seed, /INSERT INTO communities/i);
 assert.match(seed, /INSERT INTO users/i);
 assert.match(seed, /INSERT INTO user_roles/i);
+assert.match(schema, /parking_type TEXT NOT NULL/i);
+assert.match(seed, /'private'/i);
 assert.doesNotMatch(seed, /password|access_token|national.?id|payment.?credential/i);
 console.log(`database portability checks: OK (${requiredTables.length} tables)`);
 

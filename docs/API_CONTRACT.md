@@ -38,7 +38,7 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - Resident list operations are scoped to resident-owned records.
 - External RFID/ANPR adapters should translate device events into the gate-event contract rather than bypassing authorization.
 
-Parking records support `parking_type=shared|private` and `access_control=community|unit_only|none`. A private villa/unit space can therefore bypass shared-parking rules while remaining visible in the inventory and audit model.
+Parking records support `parking_type=shared|private`, `allocation_mode=fixed|reservation|first_come`, and `access_control=community|unit_only|none`. A community may assign one or many fixed spaces to a unit, reserve shared spaces, or make them first-come-first-served. Private spaces can therefore bypass shared-parking rules while remaining visible in the inventory and audit model.
 
 ## Community policy switches
 

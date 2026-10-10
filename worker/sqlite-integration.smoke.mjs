@@ -47,6 +47,15 @@ const emergencyDashboard = (await response.json()).data;
 assert.equal(emergencyDashboard.operational_state, 'manual_fallback');
 assert.equal(emergencyDashboard.last_successful_sync_at, '2026-10-10T08:00:00Z');
 
+response = await api.fetch(request('/api/demo-community/gate-events', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ gate_name: 'North Gate', direction: 'entry', decision: 'allowed', manual_override: true, reason: 'Emergency response' }) }), env);
+assert.equal(response.status, 201);
+response = await api.fetch(request('/api/demo-community/policies', { method: 'PATCH', headers: headers('user-admin'), body: JSON.stringify({ policy_key: 'manual_gate_override', enabled: false }) }), env);
+assert.equal(response.status, 200);
+response = await api.fetch(request('/api/demo-community/gate-events', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ gate_name: 'North Gate', direction: 'entry', decision: 'allowed', manual_override: true, reason: 'Should be rejected' }) }), env);
+assert.equal(response.status, 400);
+response = await api.fetch(request('/api/demo-community/policies', { method: 'PATCH', headers: headers('user-admin'), body: JSON.stringify({ policy_key: 'manual_gate_override', enabled: true }) }), env);
+assert.equal(response.status, 200);
+
 response = await api.fetch(request('/api/demo-community/visits', { method: 'POST', headers: headers('user-security'), body: JSON.stringify({ visitor_name: 'Integration Visitor', visitor_type: 'visitor', host_unit_id: 'unit-a204' }) }), env);
 assert.equal(response.status, 201);
 const visitId = (await response.json()).data.id;

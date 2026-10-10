@@ -7,7 +7,12 @@ Supported first slice:
 - `GET /api/{community_id}/units`
 - `GET /api/{community_id}/vehicles`
 - `POST /api/{community_id}/permits`
+- `GET /api/{community_id}/maintenance-tickets`
 - `POST /api/{community_id}/maintenance-tickets`
+- `PATCH /api/{community_id}/maintenance-tickets`
+- `GET /api/{community_id}/announcements`
+- `POST /api/{community_id}/announcements`
+- `POST /api/{community_id}/permit-revoke`
 
 The worker deliberately returns a clear `503` when the Site has no database binding. This prevents accidental fallback to an unprotected or in-memory production store.
 

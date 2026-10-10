@@ -22,6 +22,9 @@ The first Worker adapter uses `/api/{community_id}/{resource}` paths. Every resp
 - `POST /api/{community_id}/parking-occupancy` — operations/security/device adapter updates occupied, vacant, or unknown state and receives a red/green/amber indicator.
 - `POST /api/{community_id}/permits` — issue a time-bounded permit.
 - `POST /api/{community_id}/permit-revoke` — revoke an active permit and record the reason.
+- `GET /api/{community_id}/visits` — operational visit list; residents see visits for their units.
+- `POST /api/{community_id}/visits` — security/operations register an expected visitor, domestic staff member, delivery, or contractor.
+- `PATCH /api/{community_id}/visits` — security/operations record expected, checked-in, checked-out, or cancelled status.
 - `POST /api/{community_id}/gate-check` — allow only when the permit is active, started, and not expired.
 - `POST /api/{community_id}/gate-events` — append a gate decision event.
 

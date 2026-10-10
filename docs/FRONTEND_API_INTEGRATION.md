@@ -31,5 +31,7 @@ The parking panel sends `POST /api/{community_id}/parking-occupancy` with the se
 
 The visitor-permit form sends `POST /api/{community_id}/permits` with a 24-hour visitor window and optional unit association when server-backed mode is active. The server validates time ranges, ownership scope, and role permissions.
 
+The announcement form sends `POST /api/{community_id}/announcements` to publish an all-community in-app message. Recipient selection and notification preferences remain server-side controls.
+
 If `COMMUNITY_API_BASE` is absent, the interface continues in clearly limited local-demo mode. This preserves an external recovery path while allowing the same UI to be connected to D1 later.
 

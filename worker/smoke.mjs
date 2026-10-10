@@ -61,6 +61,9 @@ res=await api.fetch(req('/api/demo-community/vehicles',{headers:{'oai-authentica
 assert.equal(res.status,200,'resident can read scoped vehicles');
 res=await api.fetch(req('/api/demo-community/parking-claim',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-ahmed'},body:JSON.stringify({parking_space_id:'space-first-come',unit_id:'unit-a204'})}),env);
 assert.equal(res.status,403,'resident without verified unit membership is rejected');
+res=await api.fetch(req('/api/demo-community/parking-occupancy',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({parking_space_id:'space-demo',occupancy_state:'vacant',source:'sensor',sensor_ref:'SENSOR-1'})}),env);
+assert.equal(res.status,200,'security can update parking occupancy');
+assert.equal((await res.json()).data.indicator,'green','vacant parking maps to green');
 res=await api.fetch(req('/api/demo-community/gate-check',{method:'POST',headers:{'content-type':'application/json','oai-authenticated-user-id':'user-security'},body:JSON.stringify({permit_id:'missing-permit'})}),env);
 assert.equal(res.status,200,'security can check a permit');
 assert.equal((await res.json()).data.allowed,false,'missing permit is denied');
